@@ -6,4 +6,5 @@ public class Patient
   public string? race { get; set; }
   public string? gender { get; set; }
   public int? Id { get; set; }
+  public List<string> medical_notes { get; set; } = new List<string>();
 }; 
