@@ -281,13 +281,16 @@ void addSpecialization(List<Physician?> physicians)
 
 void createAppointment(List <Patient?> patients, List<Physician?> physicians, List<Appointment?> appointments)
 {
+	if (!(patients.Any() && physicians.Any()))
+	{
+		Console.WriteLine("Please add at least one patient and one physician to create an appointment.");
+		return;  
+	}
+
 	var newAppointment = new Appointment();
-	Patient chosen_patient = null;
-	var chosenPatient = new Patient();
-  DateTime finalAppointmentTime = DateTime.MinValue;
+	var chosen_patient = new Patient();
 
 	// Prints out all of the patients + their medical notes
-  string? input;
 	Console.WriteLine("Which patient would you like to schedule an appointment with?");
 	foreach (var patient in patients)
 	{
@@ -299,7 +302,7 @@ void createAppointment(List <Patient?> patients, List<Physician?> physicians, Li
 	}
 
 	// Logic to choose the user id
-	int user_id = -1;
+	int user_id = 0;
 	user_id = int.Parse(Console.ReadLine());
 	bool myLoop = true;
 	do
@@ -320,6 +323,7 @@ void createAppointment(List <Patient?> patients, List<Physician?> physicians, Li
 	Console.WriteLine("What is the appointment date? (MM/DD/YYYY)");
 	bool isValidDate = false;
 	DateTime appointmentStartDate = DateTime.MinValue;
+	DateTime finalAppointmentTime = DateTime.MinValue;
 
 	do
 	{
@@ -339,29 +343,31 @@ void createAppointment(List <Patient?> patients, List<Physician?> physicians, Li
 
 	    Works by looping through each hour then each physician for that hour and checking if unavailable hours = current hour then don't print physician
 	*/
-	DateTime startTime = appointmentStartDate.Date.AddHours(8);
-	DateTime endTime = appointmentStartDate.Date.AddHours(17);
+	DateTime loop_start_time = appointmentStartDate.Date.AddHours(8);
+	DateTime loop_end_time = appointmentStartDate.Date.AddHours(17);
 
-	for (DateTime time = startTime; time <= endTime; time = time.AddHours(1))
+	string print_line = ""; 
+	// For every hour, print a physician. IF unavailable_hour = current_hour then don't print that physician for that hour
+	for (DateTime current_hour = loop_start_time; current_hour <= loop_end_time; current_hour = current_hour.AddHours(1))
 	{
-		string line = time.ToString("hh:mm tt");
+		print_line = current_hour.ToString("hh:mm tt");
 
 		foreach (var physician in physicians)
 		{
 			bool isAvailable = true;
-			foreach (var unavailable_hours in physician?.unavailable_hours)
+			foreach (var unavailable_hour in physician?.unavailable_hours)
 			{
-				if (unavailable_hours.Hour == time.Hour && unavailable_hours.Date == time.Date)
+				if (unavailable_hour.Hour == current_hour.Hour && unavailable_hour.Date == current_hour.Date)
 				{
 					isAvailable = false;
 				}
 			}
 			if (isAvailable == true)
 			{
-				line += $" | ({physician?.Id}) {physician?.name}";
+				print_line += $" | ({physician?.Id}) {physician?.name}";
 			}
 		}
-		Console.WriteLine(line);
+		Console.WriteLine(print_line);
 	}
 
 	bool chose_valid_physician = false;
@@ -396,10 +402,8 @@ void createAppointment(List <Patient?> patients, List<Physician?> physicians, Li
 		finalAppointmentTime = appointmentStartDate.Date.AddHours(chosenHour);
 		Console.WriteLine(finalAppointmentTime);
 
-
 		// Prints the physicians
-		Console.WriteLine("Which physician would you like to schedule the appointment with?");
-		string line2 = "";
+		print_line = "";
 		foreach (var physician in physicians)
 		{
 			bool isAvailable = true;
@@ -412,19 +416,20 @@ void createAppointment(List <Patient?> patients, List<Physician?> physicians, Li
 			}
 			if (isAvailable == true)
 			{
-				line2 += $"({physician?.Id}) {physician?.name}  | ";
+				print_line += $"({physician?.Id}) {physician?.name}  | ";
 			}
 		}
 
-		if (line2 == "")
+		if (print_line == "") // This shouldn't be happening as there are different if statements to catch this already
 		{
-			Console.WriteLine("Error did not chose valid time. Please chose the correct time.");
+			Console.WriteLine($"Error the time slot that you've chosen ({finalAppointmentTime}) is already full with physicians.");
 		}
 
 		else
 		{
+			Console.WriteLine("Which physician would you like to schedule the appointment with?");
 			chose_valid_physician = true;
-			Console.WriteLine(line2);
+			Console.WriteLine(print_line);
 		}
 
 	} while (chose_valid_physician == false);
