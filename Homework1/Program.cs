@@ -28,7 +28,6 @@ do
 	case "A":
 	case "a":
 		createAppointment(patients, physicians, appointments);
-		//Appointment.Add(newAppointment);
 		break;
 	case "Q":
 	case "q":
@@ -326,19 +325,20 @@ void createAppointment(List <Patient?> patients, List<Physician?> physicians, Li
 	// Logic to choose the user id
 	int user_id = 0;
 	user_id = int.Parse(Console.ReadLine());
-	bool myLoop = true;
+	bool patient_found = false;
 	do
 	{
-		if (patients[user_id - 1] != null)
+		try
 		{
 			chosen_patient = patients[user_id - 1];
-			myLoop = false;
+			patient_found = true;
 		}
-		else
+		catch
 		{
 			Console.WriteLine("Invalid ID. Please choose a valid ID. ");
+			user_id = int.Parse(Console.ReadLine());
 		}
-	} while (myLoop == true);
+	} while (patient_found == false);
 
 
 	// Logic to chose the date
@@ -368,11 +368,9 @@ void createAppointment(List <Patient?> patients, List<Physician?> physicians, Li
 	for (DateTime current_hour = loop_start_time; current_hour <= loop_end_time; current_hour = current_hour.AddHours(1))
 	{
 		bool patient_is_available = true;
-		foreach (var patient in patients)
-		{
-			if (patient.unavailable_hours.Any())
+			if (chosen_patient.unavailable_hours.Any())
 			{
-				foreach (var unavailable_hour in patient?.unavailable_hours)
+				foreach (var unavailable_hour in chosen_patient?.unavailable_hours)
 				{
 					if (unavailable_hour.Date == current_hour.Date && unavailable_hour.Hour == current_hour.Hour)
 					{
@@ -381,7 +379,6 @@ void createAppointment(List <Patient?> patients, List<Physician?> physicians, Li
 				}
 			}
 				print_line = current_hour.ToString("hh:mm tt");
-		}
 
 		if (patient_is_available == true)
 		{
