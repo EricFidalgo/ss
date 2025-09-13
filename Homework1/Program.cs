@@ -12,7 +12,7 @@ do
 {
 	Console.WriteLine("\nP. Patient Status");
 	Console.WriteLine("H. Physician Status");
-	Console.WriteLine("A. Add a new Appointment");
+	Console.WriteLine("A. Appointment Status");
 	Console.WriteLine("Q. Quit");
 	input = Console.ReadLine();
 	switch (input)
@@ -27,7 +27,7 @@ do
 		break;
 	case "A":
 	case "a":
-		createAppointment(patients, physicians, appointments);
+		appointmentFunction(patients, physicians, appointments);
 		break;
 	case "Q":
 	case "q":
@@ -63,14 +63,36 @@ void patientFunction(List<Patient?> patients)
 			break;
 		case "R":
 		case "r":
-			foreach (var reader in patients)
-			{
-				Console.WriteLine($"({reader?.Id}) {reader?.name}, {reader?.address}, {reader?.birthdate.ToString("dd/MM/yyyy")}, {reader?.race}, {reader?.gender}");
-				foreach (var medical_note in reader?.medical_notes)
+			string print_line = "PATIENT INFORMATION\n";
+			print_line += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+				foreach (var patient in patients)
 				{
-					Console.WriteLine($"    - {medical_note}");
+					print_line += $"Name: ({patient?.Id}) {patient?.name}";
+					print_line += (patient?.gender?.ToLower() == "m") ? " 🧔\n" : " 👩\n";
+					print_line += $"Address: {patient?.address}\n";
+					print_line += $"Birthdate: {patient?.birthdate.ToString("dd/MM/yyyy")}\n";
+					print_line += $"Race: {patient?.race}\n";
+
+					if (patient?.medical_notes.Any() == true)
+					{
+						print_line += "Medical Notes:\n";
+					}
+					foreach (var medical_note in patient?.medical_notes)
+					{
+						print_line += $"	- {medical_note}\n";
+					}
+
+					if (patient?.unavailable_hours.Any() == true)
+					{
+						print_line += "Scheduled Appointments:\n";
+					}
+					foreach (var unavailable_hour in patient?.unavailable_hours)
+					{
+						print_line += $"	- {unavailable_hour}\n";
+					}
+					print_line += "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"; 
 				}
-			}
+				Console.WriteLine(print_line);
 			break;
 		case "B":
 		case "b":
@@ -153,21 +175,28 @@ void addMedicalNote(List<Patient?> patients)
 	{
 		Console.WriteLine($"({reader?.Id}) {reader?.name}");
 	}
-	int user_id = -1;
-	user_id = int.Parse(Console.ReadLine());
 
-	if (patients[user_id - 1] != null)
+	bool patient_found = false;
+	do
 	{
-		var chosen_patient = patients[user_id - 1];
-		Console.WriteLine("Type in the patients medical note:");
-		string? medical_input = Console.ReadLine();
-		chosen_patient.medical_notes.Add(medical_input);
-		Console.WriteLine("Medical note added.");
-	}
-	else
-	{
-		Console.WriteLine("Invalid ID.");
-	}
+		try
+		{
+			Console.WriteLine("Please enter a patient ID:");
+			int user_id = int.Parse(Console.ReadLine());
+			var chosen_patient = patients[user_id - 1];
+			Console.WriteLine("Type in the patients medical note:");
+			string? medical_input = Console.ReadLine();
+			chosen_patient.medical_notes.Add(medical_input);
+			Console.WriteLine("Medical note added.");
+			patient_found = true;
+		}
+		catch (Exception ex)
+		{
+			Console.WriteLine("Invalid ID. Please choose a valid ID.");
+			// Optional: Log the exception for debugging
+			// Console.WriteLine(ex.Message);
+		}
+	} while (patient_found == false);
 }
 
 void physicianFunction(List<Physician?> physicians)
@@ -197,14 +226,35 @@ void physicianFunction(List<Physician?> physicians)
 			break;
 		case "R":
 		case "r":
-			foreach (var reader in physicians)
-			{
-				Console.WriteLine($"({reader?.Id}) {reader?.name}, {reader?.graduation.ToString("dd/MM/yyyy")}");
-				foreach (var specialization in reader?.specializations)
+		
+			string print_line = "PHYSICIAN INFORMATION\n";
+			print_line += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+				foreach (var physician in physicians)
 				{
-					Console.WriteLine($"    - {specialization}");
+					print_line += $"Name: ({physician?.Id}) {physician?.name}\n";
+					print_line += $"Graduation Date: {physician?.graduation.ToString("dd/MM/yyyy")}\n";
+
+					if (physician?.specializations.Any() == true)
+					{
+						print_line += "Specializations:\n";
+					}
+					foreach (var specialization in physician?.specializations)
+					{
+						print_line += $"    - {specialization}\n";
+					}
+
+					if (physician?.unavailable_hours.Any() == true)
+					{
+						print_line += "Scheduled Appointments:\n";
+					}
+					foreach(var unavailable_hour in physician?.unavailable_hours)
+					{
+						print_line += $"    - {unavailable_hour}\n";
+					}
+					
+					print_line += "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n"; 
 				}
-			}
+			Console.WriteLine(print_line);
 			break;
 		case "B":
 		case "b":
@@ -261,22 +311,61 @@ void addSpecialization(List<Physician?> physicians)
 		Console.WriteLine($"({specialization?.Id}) {specialization?.name}");
 	}
 
-	int user_id = -1;
-	user_id = int.Parse(Console.ReadLine());
-
-	if (physicians[user_id - 1] != null)
+	bool physician_found = false;
+	do
 	{
-		var chosen_physician = physicians[user_id - 1];
-		Console.WriteLine("Type in the physicians specialization:");
-		string? specialization_input = Console.ReadLine();
-		chosen_physician.specializations.Add(specialization_input);
-		Console.WriteLine("Specialization added.");
-	}
-	else
-	{
-		Console.WriteLine("Invalid ID.");
-	}
+		try
+		{
+			Console.WriteLine("Please enter a physician ID:");
+			int user_id = int.Parse(Console.ReadLine());
+			if (user_id >= 1 && user_id <= physicians.Count)
+			{
+				var chosen_physician = physicians[user_id - 1];
+				Console.WriteLine("Type in the physician's specialization:");
+				string? specialization_input = Console.ReadLine();
+				chosen_physician.specializations.Add(specialization_input);
+				Console.WriteLine("Specialization added.");
+				physician_found = true;
+			}
+			else
+			{
+				Console.WriteLine("Invalid ID. Please choose a valid ID.");
+			}
+		}
+		catch
+		{
+			Console.WriteLine("Invalid input. Please enter a number.");
+		}
+	} while (physician_found == false);
 }
+
+void appointmentFunction(List<Patient?> patients, List<Physician?> physicians, List<Appointment?> appointments)
+{
+	bool appointment_loop = true;
+	do
+	{
+		Console.WriteLine("\nC. Create an Appointment");
+		Console.WriteLine("R. Read Appointments");
+		Console.WriteLine("B. Back");
+		input = Console.ReadLine();
+		switch (input)
+		{
+			case "C":
+			case "c":
+				createAppointment(patients, physicians, appointments);
+				break;
+			case "R":
+			case "r":
+				readAppointments(appointments);
+				break;
+			case "B":
+			case "b":
+				appointment_loop = false;
+				break;
+		}
+	} while (appointment_loop == true);
+}
+
 
 void createAppointment(List <Patient?> patients, List<Physician?> physicians, List<Appointment?> appointments)
 {
@@ -285,42 +374,9 @@ void createAppointment(List <Patient?> patients, List<Physician?> physicians, Li
 		Console.WriteLine("Please add at least one patient and one physician to create an appointment.");
 		return;
 	}
-
-	var newAppointment = new Appointment();
 	var chosen_patient = new Patient();
-	string print_line = "";
 
-	// Prints out all of the patients + their medical notes
-	Console.WriteLine("Which patient would you like to schedule an appointment with?");
-	foreach (var patient in patients)
-	{
-		print_line = "";
-		print_line += $"Patient: ({patient?.Id}) {patient?.name}";
-		print_line += (patient?.gender?.ToLower() == "m") ? " 🧔\n" : " 👩\n";
-
-		if (patient.medical_notes.Any())
-		{
-			print_line += "-----\n";
-			print_line += "Medical Notes:\n";
-			foreach (var medical_note in patient?.medical_notes)
-			{
-				print_line += $"- {medical_note}\n";
-			}
-		}
-
-		if (patient.unavailable_hours.Any())
-		{
-			print_line += "-----\n";
-			print_line += "Scheduled Appointments:\n";
-			foreach (var unavailable_hour in patient?.unavailable_hours)
-			{
-				print_line += $"- {unavailable_hour}\n";
-			}
-		}
-
-		print_line += "==============================\n";
-		Console.WriteLine(print_line);
-	}
+	_printPatients(patients);
 
 	// Logic to choose the user id
 	int user_id = 0;
@@ -351,19 +407,110 @@ void createAppointment(List <Patient?> patients, List<Physician?> physicians, Li
 	{
 		try
 		{
+			Console.WriteLine("Please enter a date (MM/DD/YYYY):");
 			appointmentStartDate = DateTime.Parse(Console.ReadLine());
+
+				// Check if the parsed date is a weekend day
+		if (appointmentStartDate.DayOfWeek == DayOfWeek.Saturday || appointmentStartDate.DayOfWeek == DayOfWeek.Sunday)
+		{
+			Console.WriteLine("Invalid date. Please choose a date from Monday to Friday.");
+			isValidDate = false;
+		}
+		else
+		{
+			// The date is a valid weekday
 			isValidDate = true;
+			Console.WriteLine($"You have selected a valid date: {appointmentStartDate.ToShortDateString()}");
+		}
 		}
 		catch
 		{
-			Console.WriteLine("Invalid date. Please choose a valid date. (MM/DD/YYYY)");
+				Console.WriteLine("Invalid date format. Please use MM/DD/YYYY.");
+				isValidDate = false;
 		}
 	} while (isValidDate == false);
 
+	_printAvailableHours(patients, physicians, appointmentStartDate, chosen_patient);
+
+	int chosenHour = _selectPatientTime(chosen_patient, appointmentStartDate); 
+
+	// Combine the user's date choice and their chosen hour
+	finalAppointmentTime = appointmentStartDate.Date.AddHours(chosenHour);
+	Console.WriteLine(finalAppointmentTime);
+
+
+	// Prints the physicians
+	string print_line = "";
+	foreach (var physician in physicians)
+	{
+		bool isAvailable = true;
+		foreach (var unavailable_hour in physician?.unavailable_hours)
+		{
+			if (unavailable_hour.Date == finalAppointmentTime.Date && unavailable_hour.Hour == finalAppointmentTime.Hour)
+			{
+				isAvailable = false;
+			}
+		}
+		if (isAvailable == true)
+		{
+			print_line += $"({physician?.Id}) {physician?.name}  | ";
+		}
+	}
+
+	if (print_line == "")
+	{
+		Console.WriteLine($"Error the time slot that you've chosen ({finalAppointmentTime}) is already full with physicians.");
+	}
+
+	else
+	{
+		Console.WriteLine("Which physician would you like to schedule the appointment with?");
+		Console.WriteLine(print_line);
+	}
+
+	_choosePhysicianId(physicians, appointments, chosen_patient, finalAppointmentTime);
+}
+
+void _printPatients(List<Patient?> patients)
+{
+	// Prints out all of the patients + their medical notes
+	Console.WriteLine("Which patient would you like to schedule an appointment with?");
+	string print_line = "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+	foreach (var patient in patients)
+	{
+		print_line += $"Patient: ({patient?.Id}) {patient?.name}";
+		print_line += (patient?.gender?.ToLower() == "m") ? " 🧔\n" : " 👩\n";
+
+		if (patient.medical_notes.Any())
+		{
+			print_line += "Medical Notes:\n";
+			foreach (var medical_note in patient?.medical_notes)
+			{
+				print_line += $"	- {medical_note}\n";
+			}
+		}
+
+		if (patient.unavailable_hours.Any())
+		{
+			print_line += "Scheduled Appointments:\n";
+			foreach (var unavailable_hour in patient?.unavailable_hours)
+			{
+				print_line += $"	- {unavailable_hour}\n";
+			}
+		}
+
+		print_line += "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
+	}
+	Console.WriteLine(print_line);
+}
+
+
+void _printAvailableHours(List<Patient?> patients, List<Physician?> physicians, DateTime appointmentStartDate, Patient chosen_patient)
+{
 	DateTime loop_start_time = appointmentStartDate.Date.AddHours(8);
 	DateTime loop_end_time = appointmentStartDate.Date.AddHours(17);
 
-	print_line = "";
+	string print_line = "";
 	// For every hour, print a physician. IF unavailable_hour = current_hour then don't print that physician for that hour
 	for (DateTime current_hour = loop_start_time; current_hour <= loop_end_time; current_hour = current_hour.AddHours(1))
 	{
@@ -410,7 +557,10 @@ void createAppointment(List <Patient?> patients, List<Physician?> physicians, Li
 		}
 		Console.WriteLine(print_line);
 	}
+}
 
+int _selectPatientTime(Patient chosen_patient, DateTime appointmentStartDate)
+{
 	int chosenHour = 0;
 	// This section is for the user to select the time
 	Console.WriteLine("Please choose the time for the appointment. (8-17)");
@@ -448,42 +598,12 @@ void createAppointment(List <Patient?> patients, List<Physician?> physicians, Li
 		}
 	} while (isValidHour == false);
 
-	// Combine the user's date choice and their chosen hour
-	finalAppointmentTime = appointmentStartDate.Date.AddHours(chosenHour);
-	Console.WriteLine(finalAppointmentTime);
-
-
-
-	// Prints the physicians
-	print_line = "";
-	foreach (var physician in physicians)
-	{
-		bool isAvailable = true;
-		foreach (var unavailable_hour in physician?.unavailable_hours)
-		{
-			if (unavailable_hour.Date == finalAppointmentTime.Date && unavailable_hour.Hour == finalAppointmentTime.Hour)
-			{
-				isAvailable = false;
-			}
-		}
-		if (isAvailable == true)
-		{
-			print_line += $"({physician?.Id}) {physician?.name}  | ";
-		}
-	}
-
-	if (print_line == "")
-	{
-		Console.WriteLine($"Error the time slot that you've chosen ({finalAppointmentTime}) is already full with physicians.");
-	}
-
-	else
-	{
-		Console.WriteLine("Which physician would you like to schedule the appointment with?");
-		Console.WriteLine(print_line);
-	}
-
+	return chosenHour;
+}
+void _choosePhysicianId(List<Physician?> physicians, List<Appointment?> appointments, Patient chosen_patient, DateTime finalAppointmentTime)
+{
 	// Choses the physician by the id
+	var newAppointment = new Appointment();
 	bool physician_loop = false;
 	do
 	{
@@ -510,6 +630,7 @@ void createAppointment(List <Patient?> patients, List<Physician?> physicians, Li
 					chosen_physician.unavailable_hours.Add(finalAppointmentTime);
 					newAppointment.patients = chosen_patient;
 					newAppointment.physicians = chosen_physician;
+					newAppointment.hour = finalAppointmentTime;
 					appointments.Add(newAppointment);
 					Console.WriteLine("Appointment created.");
 					return;
@@ -521,4 +642,50 @@ void createAppointment(List <Patient?> patients, List<Physician?> physicians, Li
 			Console.WriteLine("Please type in a number.");
 		}
 	} while (physician_loop == false);
+}
+
+void readAppointments(List<Appointment?> appointments)
+{
+	if (appointments.Any())
+	{
+		string print_line = "\n\nAPPOINTMENT DETAILS\n";
+		print_line += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+		foreach (var appointment in appointments)
+		{
+			print_line += $"{appointment.hour}\n\n";
+			print_line += "PATIENT INFORMATION\n"; 
+			print_line += $"Name: ({appointment?.patients?.Id}) {appointment?.patients?.name}";
+			print_line += (appointment?.patients?.gender?.ToLower() == "m") ? " 🧔\n" : " 👩\n";
+
+			if (appointment?.patients?.medical_notes.Any() ?? false)
+			{
+					print_line += "Medical Notes:\n";
+			}
+
+			foreach (var medical_note in appointment?.patients?.medical_notes)
+			{
+				print_line += $"	- {medical_note}\n";
+			}
+			print_line += "\n"; 
+			print_line += "PHYSICIAN INFORMATION\n"; 
+			print_line += $"Name: ({appointment?.physicians?.Id}) {appointment?.physicians?.name}\n";
+
+			if (appointment?.physicians?.specializations.Any() ?? false)
+			{
+					print_line += "Specializations:\n";
+			}
+
+			foreach (var specialization in appointment?.physicians?.specializations)
+			{
+				print_line += $"	- {specialization}\n";
+			}
+
+			print_line += "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
+		}
+		Console.WriteLine(print_line);
+	}
+	else
+	{
+		Console.WriteLine("No appointments have been created.");
+	}
 }
