@@ -233,6 +233,7 @@ void physicianFunction(List<Physician?> physicians)
 				{
 					print_line += $"Name: ({physician?.Id}) {physician?.name}\n";
 					print_line += $"Graduation Date: {physician?.graduation.ToString("dd/MM/yyyy")}\n";
+					print_line += $"License Number: {physician?.license_number}\n";
 
 					if (physician?.specializations.Any() == true)
 					{
@@ -300,6 +301,11 @@ Physician createPhysician(List<Physician?> physicians)
 			Console.WriteLine("Invalid format. Please use MM/DD/YYYY.");
 		}
 	} while (isValidDate == false);
+
+	Console.WriteLine("What is the physicians license number?"); 
+	string? license_number = Console.ReadLine();
+	physician.license_number = license_number;
+
 	return physician;
 }
 
