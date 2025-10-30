@@ -7,36 +7,6 @@ List<Appointment?> appointments = new List<Appointment?>();
 
 string? input;
 
-bool continue_loop = true;
-do
-{
-	Console.WriteLine("\nP. Patient Status");
-	Console.WriteLine("H. Physician Status");
-	Console.WriteLine("A. Appointment Status");
-	Console.WriteLine("Q. Quit");
-	input = Console.ReadLine();
-	switch (input)
-	{
-	case "P":
-	case "p":
-		patientFunction(patients);
-		break;
-	case "H":
-	case "h":
-		physicianFunction(physicians);
-		break;
-	case "A":
-	case "a":
-		appointmentFunction(patients, physicians, appointments);
-		break;
-	case "Q":
-	case "q":
-		continue_loop = false;
-		break;
-	}
-
-} while (continue_loop == true);
-
 void patientFunction(List<Patient?> patients)
 {
 	bool patient_loop = true;
@@ -44,20 +14,38 @@ void patientFunction(List<Patient?> patients)
 	{
 		Console.WriteLine("\nC. Create a new Patient");
 		Console.WriteLine("A. Add medical notes to a Patient");
+		Console.WriteLine("N. Add a new diagnosis");
+		Console.WriteLine("S. Add a new prescription");
 		Console.WriteLine("R. Read Patients");
+		Console.WriteLine("U. Update a Patient");
+		Console.WriteLine("D. Delete a Patient");
 		Console.WriteLine("B. Back");
 		input = Console.ReadLine();
 		switch (input)
 		{
 		case "C":
 		case "c":
-			Patient newPatient = createPatient(patients);
+			Patient newPatient = MedicalDataService.createPatient(patients);
 			patients.Add(newPatient);
 			break;
 		case "A":
 		case "a":
 			if (patients.Any())
-				addMedicalNote(patients);
+				MedicalDataService.addMedicalNote(patients);
+			else
+				Console.WriteLine("No patients have been created.");
+			break;
+		case "N":
+		case "n":
+			if (patients.Any())
+				MedicalDataService.addDiagnosis(patients);
+			else
+				Console.WriteLine("No patients have been created.");
+			break;
+		case "S":
+		case "s":
+			if (patients.Any())
+				MedicalDataService.addPrescription(patients);
 			else
 				Console.WriteLine("No patients have been created.");
 			break;
@@ -82,6 +70,24 @@ void patientFunction(List<Patient?> patients)
 						print_line += $"	- {medical_note}\n";
 					}
 
+					if (patient?.diagnoses.Any() == true)
+					{
+						print_line += "Diagnoses:\n";
+					}
+					foreach (var diagnosis in patient?.diagnoses)
+					{
+						print_line += $"	- {diagnosis}\n";
+					}
+
+					if (patient?.prescriptions.Any() == true)
+					{
+						print_line += "Prescriptions:\n";
+					}
+					foreach (var prescription in patient?.prescriptions)
+					{
+						print_line += $"	- {prescription}\n";
+					}
+
 					if (patient?.unavailable_hours.Any() == true)
 					{
 						print_line += "Scheduled Appointments:\n";
@@ -94,6 +100,20 @@ void patientFunction(List<Patient?> patients)
 				}
 				Console.WriteLine(print_line);
 			break;
+		case "U":
+		case "u":
+			if (patients.Any())
+				MedicalDataService.UpdatePatient(patients);
+			else
+				Console.WriteLine("No patients have been created.");
+			break;
+		case "D":
+		case "d":
+			if (patients.Any())
+				MedicalDataService.DeletePatient(patients);
+			else
+				Console.WriteLine("No patients have been created.");
+			break;
 		case "B":
 		case "b":
 			patient_loop = false;
@@ -102,125 +122,32 @@ void patientFunction(List<Patient?> patients)
 	} while (patient_loop == true);
 }
 
-Patient createPatient(List <Patient?> patients)
-{
-	var patient = new Patient();
-
-	var maxId = -1;
-
-	if (patients.Any())
-	{
-		maxId = patients.Select(reader => reader?.Id ?? -1).Max();
-	}
-	else
-	{
-		maxId = 0;
-	}
-	patient.Id = ++maxId;
-
-	Console.WriteLine("What is the patients name?");
-	string? name = Console.ReadLine();
-	patient.name = name;
-
-
-	Console.WriteLine("What is the patients address?");
-	string? address = Console.ReadLine();
-	patient.address = address;
-
-	Console.WriteLine("What is the patients birthdate? (MM/DD/YYYY)");
-	bool isValidDate = false;
-	do
-	{
-		try
-		{
-			DateTime birthdate = DateTime.Parse(Console.ReadLine());
-			patient.birthdate = birthdate;
-			isValidDate = true;
-		}
-		catch
-		{
-			Console.WriteLine("Invalid format. Please use MM/DD/YYYY.");
-		}
-	} while (isValidDate == false);
-
-
-	Console.WriteLine("What is the patients race?");
-	string? race = Console.ReadLine();
-	patient.race = race;
-
-	Console.WriteLine("What is the patients gender? (M/F)");
-	bool isValidGender = false;
-	do
-	{
-		string? gender = Console.ReadLine();
-		if (gender == "M" || gender == "m" || gender == "F" || gender == "f")
-		{
-			patient.gender = gender;
-			isValidGender = true;
-		}
-		else
-		{
-			Console.WriteLine("Invalid Gender.");
-		}
-	} while (isValidGender == false);
-
-	return patient;
-}
-
-void addMedicalNote(List<Patient?> patients)
-{
-	Console.WriteLine("Please Choose the patients ID:");
-
-	foreach (var reader in patients)
-	{
-		Console.WriteLine($"({reader?.Id}) {reader?.name}");
-	}
-
-	bool patient_found = false;
-	do
-	{
-		try
-		{
-			Console.WriteLine("Please enter a patient ID:");
-			int user_id = int.Parse(Console.ReadLine());
-			var chosen_patient = patients[user_id - 1];
-			Console.WriteLine("Type in the patients medical note:");
-			string? medical_input = Console.ReadLine();
-			chosen_patient.medical_notes.Add(medical_input);
-			Console.WriteLine("Medical note added.");
-			patient_found = true;
-		}
-		catch (Exception ex)
-		{
-			Console.WriteLine("Invalid ID. Please choose a valid ID.");
-			// Optional: Log the exception for debugging
-			// Console.WriteLine(ex.Message);
-		}
-	} while (patient_found == false);
-}
-
 void physicianFunction(List<Physician?> physicians)
 {
 	bool physician_loop = true;
 	do
 	{
 		Console.WriteLine("\nC. Create a new Physician");
-		Console.WriteLine("A. Add a Specialization");
+		Console.WriteLine("S. Add a Specialization");
 		Console.WriteLine("R. Read Physicians");
+		Console.WriteLine("U. Update a Physician"); // New option
+		Console.WriteLine("D. Delete a Physician"); // New option
 		Console.WriteLine("B. Back");
 		input = Console.ReadLine();
+		// Ensure physicians list is not empty for operations that require it
+		bool hasPhysicians = physicians.Any();
 		switch (input)
 		{
 		case "C":
 		case "c":
-			var newPhysician = createPhysician(physicians);
-			physicians.Add(newPhysician);
+			var newPhysician = MedicalDataService.createPhysician(physicians);
+			physicians.Add(newPhysician); // Add the newly created physician to the list
 			Console.WriteLine("Physician created.");
 			break;
-		case "A":
-		case "a":
-			if (physicians.Any())
-				addSpecialization(physicians);
+		case "S": // Changed from 'A' to 'S' to avoid conflict with 'A' for Appointments in main menu
+		case "s":
+			if (hasPhysicians)
+				MedicalDataService.addSpecialization(physicians);
 			else
 				Console.WriteLine("No physicians have been created.");
 			break;
@@ -257,92 +184,26 @@ void physicianFunction(List<Physician?> physicians)
 				}
 			Console.WriteLine(print_line);
 			break;
+		case "U": // New case for Update
+		case "u":
+			if (hasPhysicians)
+				MedicalDataService.UpdatePhysician(physicians);
+			else
+				Console.WriteLine("No physicians have been created.");
+			break;
+		case "D": // New case for Delete
+		case "d":
+			if (hasPhysicians)
+				MedicalDataService.DeletePhysician(physicians);
+			else
+				Console.WriteLine("No physicians have been created.");
+			break;
 		case "B":
 		case "b":
 			physician_loop = false;
 			break;
 		}
 	} while (physician_loop == true);
-}
-
-Physician createPhysician(List<Physician?> physicians)
-{
-
-	var physician = new Physician();
-
-	var maxId = -1;
-
-	if (physicians.Any())
-	{
-		maxId = physicians.Select(reader => reader?.Id ?? -1).Max();
-	}
-	else
-	{
-		maxId = 0;
-	}
-	physician.Id = ++maxId;
-
-	Console.WriteLine("What is the physician's name?");
-	string? name = Console.ReadLine();
-	physician.name = name;
-
-	Console.WriteLine("What is the physicians graduation date? (MM/DD/YYYY)");
-	bool isValidDate = false;
-	do
-	{
-		try
-		{
-			DateTime graduation = DateTime.Parse(Console.ReadLine());
-			physician.graduation = graduation;
-			isValidDate = true;
-		}
-		catch
-		{
-			Console.WriteLine("Invalid format. Please use MM/DD/YYYY.");
-		}
-	} while (isValidDate == false);
-
-	Console.WriteLine("What is the physicians license number?"); 
-	string? license_number = Console.ReadLine();
-	physician.license_number = license_number;
-
-	return physician;
-}
-
-void addSpecialization(List<Physician?> physicians)
-{
-	Console.WriteLine("Please Choose the physicians ID:");
-	foreach (var specialization in physicians)
-	{
-		Console.WriteLine($"({specialization?.Id}) {specialization?.name}");
-	}
-
-	bool physician_found = false;
-	do
-	{
-		try
-		{
-			Console.WriteLine("Please enter a physician ID:");
-			int user_id = int.Parse(Console.ReadLine());
-			if (user_id >= 1 && user_id <= physicians.Count)
-			{
-				var chosen_physician = physicians[user_id - 1];
-				Console.WriteLine("Type in the physician's specialization:");
-				string? specialization_input = Console.ReadLine();
-				chosen_physician.specializations.Add(specialization_input);
-				Console.WriteLine("Specialization added.");
-				physician_found = true;
-			}
-			else
-			{
-				Console.WriteLine("Invalid ID. Please choose a valid ID.");
-			}
-		}
-		catch
-		{
-			Console.WriteLine("Invalid input. Please enter a number.");
-		}
-	} while (physician_found == false);
 }
 
 void appointmentFunction(List<Patient?> patients, List<Physician?> physicians, List<Appointment?> appointments)
@@ -372,7 +233,6 @@ void appointmentFunction(List<Patient?> patients, List<Physician?> physicians, L
 	} while (appointment_loop == true);
 }
 
-
 void createAppointment(List <Patient?> patients, List<Physician?> physicians, List<Appointment?> appointments)
 {
 	if (!(patients.Any() && physicians.Any()))
@@ -380,27 +240,34 @@ void createAppointment(List <Patient?> patients, List<Physician?> physicians, Li
 		Console.WriteLine("Please add at least one patient and one physician to create an appointment.");
 		return;
 	}
-	var chosen_patient = new Patient();
+	Patient? chosen_patient = null; // Initialize to null
+	int patientId = 0;
+	bool patientSelected = false;
 
 	_printPatients(patients);
 
 	// Logic to choose the user id
-	int user_id = 0;
-	user_id = int.Parse(Console.ReadLine());
-	bool patient_found = false;
 	do
 	{
-		try
+		Console.WriteLine("Please enter the ID of the patient you would like to schedule an appointment with:");
+		string? inputId = Console.ReadLine();
+		if (int.TryParse(inputId, out patientId))
 		{
-			chosen_patient = patients[user_id - 1];
-			patient_found = true;
+			chosen_patient = patients.FirstOrDefault(p => p?.Id == patientId);
+			if (chosen_patient != null)
+			{
+				patientSelected = true;
+			}
+			else
+			{
+				Console.WriteLine("Invalid ID. Patient not found. Please choose a valid ID.");
+			}
 		}
-		catch
+		else
 		{
-			Console.WriteLine("Invalid ID. Please choose a valid ID. ");
-			user_id = int.Parse(Console.ReadLine());
+			Console.WriteLine("Invalid input. Please enter a number.");
 		}
-	} while (patient_found == false);
+	} while (!patientSelected);
 
 
 	// Logic to chose the date
@@ -510,7 +377,6 @@ void _printPatients(List<Patient?> patients)
 	Console.WriteLine(print_line);
 }
 
-
 void _printAvailableHours(List<Patient?> patients, List<Physician?> physicians, DateTime appointmentStartDate, Patient chosen_patient)
 {
 	DateTime loop_start_time = appointmentStartDate.Date.AddHours(8);
@@ -606,32 +472,33 @@ int _selectPatientTime(Patient chosen_patient, DateTime appointmentStartDate)
 
 	return chosenHour;
 }
+
 void _choosePhysicianId(List<Physician?> physicians, List<Appointment?> appointments, Patient chosen_patient, DateTime finalAppointmentTime)
 {
 	// Choses the physician by the id
 	var newAppointment = new Appointment();
-	bool physician_loop = false;
+	bool physicianSelected = false;
 	do
 	{
-		try
+		Console.WriteLine("Enter the ID of the physician you would like to schedule the appointment with:");
+		string? inputId = Console.ReadLine();
+		if (int.TryParse(inputId, out int physician_id))
 		{
-			int physician_id = int.Parse(Console.ReadLine());
+			var chosen_physician = physicians.FirstOrDefault(p => p?.Id == physician_id);
 
-			if (!(physician_id >= 1 && physician_id <= physicians.Count()))
+			if (chosen_physician == null)
 			{
-				Console.WriteLine("Invalid ID. Please choose a valid ID.");
+				Console.WriteLine("Invalid ID. Physician not found. Please choose a valid ID.");
 			}
 			else
 			{
-				var chosen_physician = physicians[physician_id - 1];
-
 				if (chosen_physician.unavailable_hours.Any(uh => uh == finalAppointmentTime))
 				{
 					Console.WriteLine("Physician is unavailable at this time. Please choose another physician.");
 				}
 				else
 				{
-					physician_loop = true;
+					physicianSelected = true; // Set to true to exit loop
 					chosen_patient.unavailable_hours.Add(finalAppointmentTime);
 					chosen_physician.unavailable_hours.Add(finalAppointmentTime);
 					newAppointment.patients = chosen_patient;
@@ -639,15 +506,15 @@ void _choosePhysicianId(List<Physician?> physicians, List<Appointment?> appointm
 					newAppointment.hour = finalAppointmentTime;
 					appointments.Add(newAppointment);
 					Console.WriteLine("Appointment created.");
-					return;
+					return; // Exit the function after successful creation
 				}
 			}
 		}
-		catch
+		else
 		{
-			Console.WriteLine("Please type in a number.");
+			Console.WriteLine("Invalid input. Please type in a number.");
 		}
-	} while (physician_loop == false);
+	} while (!physicianSelected);
 }
 
 void readAppointments(List<Appointment?> appointments)
@@ -695,3 +562,33 @@ void readAppointments(List<Appointment?> appointments)
 		Console.WriteLine("No appointments have been created.");
 	}
 }
+
+bool continue_loop = true;
+do
+{
+	Console.WriteLine("\nP. Patient Status");
+	Console.WriteLine("H. Physician Status");
+	Console.WriteLine("A. Appointment Status");
+	Console.WriteLine("Q. Quit");
+	input = Console.ReadLine();
+	switch (input)
+	{
+	case "P":
+	case "p":
+		patientFunction(patients);
+		break;
+	case "H":
+	case "h":
+		physicianFunction(physicians);
+		break;
+	case "A":
+	case "a":
+		appointmentFunction(patients, physicians, appointments);
+		break;
+	case "Q":
+	case "q":
+		continue_loop = false;
+		break;
+	}
+
+} while (continue_loop == true);
