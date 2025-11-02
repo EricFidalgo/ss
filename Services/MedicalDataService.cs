@@ -362,4 +362,246 @@ public static class MedicalDataService
       }
     }
   }
+
+  public static void CreateAppointment(List<Patient?> patients, List<Physician?> physicians, List<Appointment?> appointments)
+  {
+    if (!patients.Any() || !physicians.Any())
+    {
+      Console.WriteLine("Please add at least one patient and one physician to create an appointment.");
+      return;
+    }
+
+    // 1. Select Patient
+    var chosenPatient = SelectPatient(patients, "schedule an appointment for");
+    if (chosenPatient == null) return;
+
+    // 2. Select Date & Time
+    var finalAppointmentTime = SelectAppointmentDateTime(chosenPatient, physicians);
+    if (finalAppointmentTime == DateTime.MinValue) return;
+
+    // 3. Select Physician
+    var chosenPhysician = SelectAvailablePhysician(physicians, finalAppointmentTime);
+    if (chosenPhysician == null) return;
+
+    // 4. Create and Add Appointment
+    var newAppointment = new Appointment
+    {
+      Id = appointments.Any() ? appointments.Max(a => a.Id) + 1 : 1,
+      patients = chosenPatient,
+      physicians = chosenPhysician,
+      hour = finalAppointmentTime
+    };
+
+    chosenPatient.unavailable_hours.Add(finalAppointmentTime);
+    chosenPhysician.unavailable_hours.Add(finalAppointmentTime);
+    appointments.Add(newAppointment);
+
+    Console.WriteLine($"Appointment created successfully for {chosenPatient.name} with Dr. {chosenPhysician.name} at {finalAppointmentTime}.");
+  }
+
+  public static void UpdateAppointment(List<Patient?> patients, List<Physician?> physicians, List<Appointment?> appointments)
+  {
+    if (!appointments.Any())
+    {
+      Console.WriteLine("No appointments to update.");
+      return;
+    }
+
+    Console.WriteLine("Please choose the appointment to update:");
+    foreach (var appt in appointments)
+    {
+      Console.WriteLine($"({appt.Id}) {appt.hour} - Patient: {appt.patients.name}, Physician: {appt.physicians.name}");
+    }
+
+    Appointment appointmentToUpdate = null;
+    while (appointmentToUpdate == null)
+    {
+      Console.WriteLine("Enter the ID of the appointment you want to update:");
+      if (int.TryParse(Console.ReadLine(), out int apptId))
+      {
+        appointmentToUpdate = appointments.FirstOrDefault(a => a.Id == apptId);
+        if (appointmentToUpdate == null)
+        {
+          Console.WriteLine("Appointment not found. Please enter a valid ID.");
+        }
+      }
+      else
+      {
+        Console.WriteLine("Invalid input. Please enter a number.");
+      }
+    }
+
+    // Free up the old slot
+    appointmentToUpdate.patients.unavailable_hours.Remove(appointmentToUpdate.hour);
+    appointmentToUpdate.physicians.unavailable_hours.Remove(appointmentToUpdate.hour);
+
+    Console.WriteLine("Updating appointment. Please provide new details.");
+
+    // Reuse selection logic
+    var newPatient = SelectPatient(patients, "reschedule for");
+    if (newPatient == null) return; // Canceled
+
+    var newAppointmentTime = SelectAppointmentDateTime(newPatient, physicians);
+    if (newAppointmentTime == DateTime.MinValue) return; // Canceled
+
+    var newPhysician = SelectAvailablePhysician(physicians, newAppointmentTime);
+    if (newPhysician == null) return; // Canceled
+
+    // Update the appointment
+    appointmentToUpdate.patients = newPatient;
+    appointmentToUpdate.physicians = newPhysician;
+    appointmentToUpdate.hour = newAppointmentTime;
+
+    // Book the new slot
+    newPatient.unavailable_hours.Add(newAppointmentTime);
+    newPhysician.unavailable_hours.Add(newAppointmentTime);
+
+    Console.WriteLine("Appointment updated successfully.");
+  }
+
+  public static void DeleteAppointment(List<Appointment?> appointments)
+  {
+    if (!appointments.Any())
+    {
+      Console.WriteLine("No appointments to delete.");
+      return;
+    }
+
+    Console.WriteLine("Please choose the appointment to delete:");
+    foreach (var appt in appointments)
+    {
+      Console.WriteLine($"({appt.Id}) {appt.hour} - Patient: {appt.patients.name}, Physician: {appt.physicians.name}");
+    }
+
+    Appointment appointmentToDelete = null;
+    while (appointmentToDelete == null)
+    {
+      Console.WriteLine("Enter the ID of the appointment you want to delete:");
+      if (int.TryParse(Console.ReadLine(), out int apptId))
+      {
+        appointmentToDelete = appointments.FirstOrDefault(a => a.Id == apptId);
+        if (appointmentToDelete == null)
+        {
+          Console.WriteLine("Appointment not found. Please enter a valid ID.");
+        }
+      }
+      else
+      {
+        Console.WriteLine("Invalid input. Please enter a number.");
+      }
+    }
+
+    // Free up the time slot for both patient and physician
+    appointmentToDelete.patients.unavailable_hours.Remove(appointmentToDelete.hour);
+    appointmentToDelete.physicians.unavailable_hours.Remove(appointmentToDelete.hour);
+
+    appointments.Remove(appointmentToDelete);
+    Console.WriteLine("Appointment deleted successfully.");
+  }
+
+  private static Patient SelectPatient(List<Patient?> patients, string action)
+  {
+    Console.WriteLine($"Please choose the patient to {action}:");
+    foreach (var p in patients) Console.WriteLine($"({p.Id}) {p.name}");
+
+    Patient chosenPatient = null;
+    while (chosenPatient == null)
+    {
+      Console.WriteLine("Enter patient ID:");
+      if (int.TryParse(Console.ReadLine(), out int patientId))
+      {
+        chosenPatient = patients.FirstOrDefault(p => p?.Id == patientId);
+        if (chosenPatient == null) Console.WriteLine("Patient not found.");
+      }
+      else
+      {
+        Console.WriteLine("Invalid ID format.");
+      }
+    }
+    return chosenPatient;
+  }
+
+  private static DateTime SelectAppointmentDateTime(Patient patient, List<Physician?> physicians)
+  {
+    DateTime appointmentDate;
+    while (true)
+    {
+      Console.WriteLine("Enter appointment date (MM/DD/YYYY):");
+      if (DateTime.TryParse(Console.ReadLine(), out appointmentDate))
+      {
+        if (appointmentDate.DayOfWeek == DayOfWeek.Saturday || appointmentDate.DayOfWeek == DayOfWeek.Sunday)
+        {
+          Console.WriteLine("Appointments are only available Monday through Friday.");
+          continue;
+        }
+        break;
+      }
+      Console.WriteLine("Invalid date format.");
+    }
+
+    Console.WriteLine("\nAvailable Times:");
+    for (int hour = 8; hour <= 17; hour++)
+    {
+      var time = appointmentDate.Date.AddHours(hour);
+      if (patient.unavailable_hours.Contains(time))
+      {
+        Console.WriteLine($"{time:hh:mm tt} - Unavailable (Patient booked)");
+      }
+      else
+      {
+        var availablePhysicians = physicians.Where(ph => !ph.unavailable_hours.Contains(time)).ToList();
+        if (availablePhysicians.Any())
+        {
+          Console.WriteLine($"{time:hh:mm tt} - Available with {availablePhysicians.Count} physician(s)");
+        }
+        else
+        {
+          Console.WriteLine($"{time:hh:mm tt} - Unavailable (All physicians booked)");
+        }
+      }
+    }
+
+    while (true)
+    {
+      Console.WriteLine("\nEnter desired hour (8-17):");
+      if (int.TryParse(Console.ReadLine(), out int chosenHour) && chosenHour >= 8 && chosenHour <= 17)
+      {
+        var finalTime = appointmentDate.Date.AddHours(chosenHour);
+        if (patient.unavailable_hours.Contains(finalTime))
+        {
+          Console.WriteLine("Patient is already booked at this time.");
+          continue;
+        }
+        if (!physicians.Any(ph => !ph.unavailable_hours.Contains(finalTime)))
+        {
+          Console.WriteLine("No physicians are available at this time.");
+          continue;
+        }
+        return finalTime;
+      }
+      Console.WriteLine("Invalid hour.");
+    }
+  }
+
+  private static Physician SelectAvailablePhysician(List<Physician?> physicians, DateTime time)
+  {
+    var availablePhysicians = physicians.Where(ph => !ph.unavailable_hours.Contains(time)).ToList();
+    Console.WriteLine("\nAvailable Physicians at this time:");
+    foreach (var p in availablePhysicians) Console.WriteLine($"({p.Id}) {p.name}");
+
+    while (true)
+    {
+      Console.WriteLine("Enter physician ID:");
+      if (int.TryParse(Console.ReadLine(), out int physicianId))
+      {
+        var chosenPhysician = availablePhysicians.FirstOrDefault(p => p.Id == physicianId);
+        if (chosenPhysician != null) return chosenPhysician;
+        Console.WriteLine("Invalid ID or physician is not available at this time.");
+      }
+      else
+      {
+        Console.WriteLine("Invalid ID format.");
+      }
+    }
+  }
 }

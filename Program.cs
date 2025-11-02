@@ -212,6 +212,8 @@ void appointmentFunction(List<Patient?> patients, List<Physician?> physicians, L
 	do
 	{
 		Console.WriteLine("\nC. Create an Appointment");
+		Console.WriteLine("U. Update an Appointment");
+		Console.WriteLine("D. Delete an Appointment");
 		Console.WriteLine("R. Read Appointments");
 		Console.WriteLine("B. Back");
 		input = Console.ReadLine();
@@ -219,7 +221,15 @@ void appointmentFunction(List<Patient?> patients, List<Physician?> physicians, L
 		{
 			case "C":
 			case "c":
-				createAppointment(patients, physicians, appointments);
+				MedicalDataService.CreateAppointment(patients, physicians, appointments);
+				break;
+			case "U":
+			case "u":
+				MedicalDataService.UpdateAppointment(patients, physicians, appointments);
+				break;
+			case "D":
+			case "d":
+				MedicalDataService.DeleteAppointment(appointments);
 				break;
 			case "R":
 			case "r":
@@ -233,290 +243,6 @@ void appointmentFunction(List<Patient?> patients, List<Physician?> physicians, L
 	} while (appointment_loop == true);
 }
 
-void createAppointment(List <Patient?> patients, List<Physician?> physicians, List<Appointment?> appointments)
-{
-	if (!(patients.Any() && physicians.Any()))
-	{
-		Console.WriteLine("Please add at least one patient and one physician to create an appointment.");
-		return;
-	}
-	Patient? chosen_patient = null; // Initialize to null
-	int patientId = 0;
-	bool patientSelected = false;
-
-	_printPatients(patients);
-
-	// Logic to choose the user id
-	do
-	{
-		Console.WriteLine("Please enter the ID of the patient you would like to schedule an appointment with:");
-		string? inputId = Console.ReadLine();
-		if (int.TryParse(inputId, out patientId))
-		{
-			chosen_patient = patients.FirstOrDefault(p => p?.Id == patientId);
-			if (chosen_patient != null)
-			{
-				patientSelected = true;
-			}
-			else
-			{
-				Console.WriteLine("Invalid ID. Patient not found. Please choose a valid ID.");
-			}
-		}
-		else
-		{
-			Console.WriteLine("Invalid input. Please enter a number.");
-		}
-	} while (!patientSelected);
-
-
-	// Logic to chose the date
-	Console.WriteLine("What is the appointment date? (MM/DD/YYYY)");
-	bool isValidDate = false;
-	DateTime appointmentStartDate = DateTime.MinValue;
-	DateTime finalAppointmentTime = DateTime.MinValue;
-
-	do
-	{
-		try
-		{
-			Console.WriteLine("Please enter a date (MM/DD/YYYY):");
-			appointmentStartDate = DateTime.Parse(Console.ReadLine());
-
-				// Check if the parsed date is a weekend day
-		if (appointmentStartDate.DayOfWeek == DayOfWeek.Saturday || appointmentStartDate.DayOfWeek == DayOfWeek.Sunday)
-		{
-			Console.WriteLine("Invalid date. Please choose a date from Monday to Friday.");
-			isValidDate = false;
-		}
-		else
-		{
-			// The date is a valid weekday
-			isValidDate = true;
-			Console.WriteLine($"You have selected a valid date: {appointmentStartDate.ToShortDateString()}");
-		}
-		}
-		catch
-		{
-				Console.WriteLine("Invalid date format. Please use MM/DD/YYYY.");
-				isValidDate = false;
-		}
-	} while (isValidDate == false);
-
-	_printAvailableHours(patients, physicians, appointmentStartDate, chosen_patient);
-
-	int chosenHour = _selectPatientTime(chosen_patient, appointmentStartDate); 
-
-	// Combine the user's date choice and their chosen hour
-	finalAppointmentTime = appointmentStartDate.Date.AddHours(chosenHour);
-	Console.WriteLine(finalAppointmentTime);
-
-
-	// Prints the physicians
-	string print_line = "";
-	foreach (var physician in physicians)
-	{
-		bool isAvailable = true;
-		foreach (var unavailable_hour in physician?.unavailable_hours)
-		{
-			if (unavailable_hour.Date == finalAppointmentTime.Date && unavailable_hour.Hour == finalAppointmentTime.Hour)
-			{
-				isAvailable = false;
-			}
-		}
-		if (isAvailable == true)
-		{
-			print_line += $"({physician?.Id}) {physician?.name}  | ";
-		}
-	}
-
-	if (print_line == "")
-	{
-		Console.WriteLine($"Error the time slot that you've chosen ({finalAppointmentTime}) is already full with physicians.");
-	}
-
-	else
-	{
-		Console.WriteLine("Which physician would you like to schedule the appointment with?");
-		Console.WriteLine(print_line);
-	}
-
-	_choosePhysicianId(physicians, appointments, chosen_patient, finalAppointmentTime);
-}
-
-void _printPatients(List<Patient?> patients)
-{
-	// Prints out all of the patients + their medical notes
-	Console.WriteLine("Which patient would you like to schedule an appointment with?");
-	string print_line = "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
-	foreach (var patient in patients)
-	{
-		print_line += $"Patient: ({patient?.Id}) {patient?.name}";
-		print_line += (patient?.gender?.ToLower() == "m") ? " 🧔\n" : " 👩\n";
-
-		if (patient.medical_notes.Any())
-		{
-			print_line += "Medical Notes:\n";
-			foreach (var medical_note in patient?.medical_notes)
-			{
-				print_line += $"	- {medical_note}\n";
-			}
-		}
-
-		if (patient.unavailable_hours.Any())
-		{
-			print_line += "Scheduled Appointments:\n";
-			foreach (var unavailable_hour in patient?.unavailable_hours)
-			{
-				print_line += $"	- {unavailable_hour}\n";
-			}
-		}
-
-		print_line += "\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n";
-	}
-	Console.WriteLine(print_line);
-}
-
-void _printAvailableHours(List<Patient?> patients, List<Physician?> physicians, DateTime appointmentStartDate, Patient chosen_patient)
-{
-	DateTime loop_start_time = appointmentStartDate.Date.AddHours(8);
-	DateTime loop_end_time = appointmentStartDate.Date.AddHours(17);
-
-	string print_line = "";
-	// For every hour, print a physician. IF unavailable_hour = current_hour then don't print that physician for that hour
-	for (DateTime current_hour = loop_start_time; current_hour <= loop_end_time; current_hour = current_hour.AddHours(1))
-	{
-		bool patient_is_available = true; // variable is reset every hour to check if the patient is available
-
-
-		if (chosen_patient.unavailable_hours.Any()) // check if the patient has any unavailable hours to start with
-		{
-			foreach (var unavailable_hour in chosen_patient?.unavailable_hours)
-			{
-				if (unavailable_hour.Date == current_hour.Date && unavailable_hour.Hour == current_hour.Hour)
-				{
-					patient_is_available = false;
-				}
-			}
-		}
-		print_line = current_hour.ToString("hh:mm tt");
-
-		if (patient_is_available == true)
-		{
-			foreach (var physician in physicians) // loop through all of the physicians
-			{
-				bool physician_is_available = true;
-				if (physician.unavailable_hours.Any())
-				{
-					foreach (var unavailable_hour in physician?.unavailable_hours) // check if they are available for each specific hour
-					{
-						if (unavailable_hour.Hour == current_hour.Hour && unavailable_hour.Date == current_hour.Date)
-						{
-							physician_is_available = false;
-						}
-					}
-				}
-				if (physician_is_available == true)
-				{
-					print_line += $" | ({physician?.Id}) {physician?.name}";
-				}
-			}
-		}
-
-		else if (patient_is_available == false)
-		{
-			print_line += " | Unavailable";
-		}
-		Console.WriteLine(print_line);
-	}
-}
-
-int _selectPatientTime(Patient chosen_patient, DateTime appointmentStartDate)
-{
-	int chosenHour = 0;
-	// This section is for the user to select the time
-	Console.WriteLine("Please choose the time for the appointment. (8-17)");
-	bool isValidHour = true;
-	var patient_unavailable_hours = new List<DateTime>(chosen_patient.unavailable_hours);
-	do
-	{
-		isValidHour = true;
-		try
-		{
-			chosenHour = int.Parse(Console.ReadLine());
-
-			if (!(chosenHour >= 8 && chosenHour <= 17))
-			{
-				Console.WriteLine("Invalid hour. Please choose a value between 8 and 17.");
-				isValidHour = false;
-			}
-
-			if (patient_unavailable_hours.Any())
-			{
-				foreach (var patient_unavailable_hour in patient_unavailable_hours)
-				{
-					if (chosenHour == patient_unavailable_hour.Hour && appointmentStartDate.Date == patient_unavailable_hour.Date)
-					{
-						Console.WriteLine("Invalid hour. Please choose a time when the patient is available.");
-						isValidHour = false;
-					}
-				}
-			}
-		}
-		catch
-		{
-			Console.WriteLine("Invalid input. Please enter a number.");
-			isValidHour = false;
-		}
-	} while (isValidHour == false);
-
-	return chosenHour;
-}
-
-void _choosePhysicianId(List<Physician?> physicians, List<Appointment?> appointments, Patient chosen_patient, DateTime finalAppointmentTime)
-{
-	// Choses the physician by the id
-	var newAppointment = new Appointment();
-	bool physicianSelected = false;
-	do
-	{
-		Console.WriteLine("Enter the ID of the physician you would like to schedule the appointment with:");
-		string? inputId = Console.ReadLine();
-		if (int.TryParse(inputId, out int physician_id))
-		{
-			var chosen_physician = physicians.FirstOrDefault(p => p?.Id == physician_id);
-
-			if (chosen_physician == null)
-			{
-				Console.WriteLine("Invalid ID. Physician not found. Please choose a valid ID.");
-			}
-			else
-			{
-				if (chosen_physician.unavailable_hours.Any(uh => uh == finalAppointmentTime))
-				{
-					Console.WriteLine("Physician is unavailable at this time. Please choose another physician.");
-				}
-				else
-				{
-					physicianSelected = true; // Set to true to exit loop
-					chosen_patient.unavailable_hours.Add(finalAppointmentTime);
-					chosen_physician.unavailable_hours.Add(finalAppointmentTime);
-					newAppointment.patients = chosen_patient;
-					newAppointment.physicians = chosen_physician;
-					newAppointment.hour = finalAppointmentTime;
-					appointments.Add(newAppointment);
-					Console.WriteLine("Appointment created.");
-					return; // Exit the function after successful creation
-				}
-			}
-		}
-		else
-		{
-			Console.WriteLine("Invalid input. Please type in a number.");
-		}
-	} while (!physicianSelected);
-}
-
 void readAppointments(List<Appointment?> appointments)
 {
 	if (appointments.Any())
@@ -525,7 +251,8 @@ void readAppointments(List<Appointment?> appointments)
 		print_line += "━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n\n";
 		foreach (var appointment in appointments)
 		{
-			print_line += $"{appointment.hour}\n\n";
+			print_line += $"APPOINTMENT ID: {appointment.Id}\n";
+			print_line += $"Time: {appointment.hour}\n\n";
 			print_line += "PATIENT INFORMATION\n"; 
 			print_line += $"Name: ({appointment?.patients?.Id}) {appointment?.patients?.name}";
 			print_line += (appointment?.patients?.gender?.ToLower() == "m") ? " 🧔\n" : " 👩\n";
