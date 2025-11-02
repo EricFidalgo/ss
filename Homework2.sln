@@ -1,0 +1,30 @@
+﻿Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Homework2", "Homework2.Backend\Homework2.Backend.csproj", "{54A0E5D1-6486-6BFF-5452-CBA46327505A}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Homework2.Maui", "Homework2.Maui\Homework2.Maui.csproj", "{7F269509-B410-4B54-BC30-F38B5CD96E02}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{54A0E5D1-6486-6BFF-5452-CBA46327505A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{54A0E5D1-6486-6BFF-5452-CBA46327505A}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{54A0E5D1-6486-6BFF-5452-CBA46327505A}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{54A0E5D1-6486-6BFF-5452-CBA46327505A}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7F269509-B410-4B54-BC30-F38B5CD96E02}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7F269509-B410-4B54-BC30-F38B5CD96E02}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7F269509-B410-4B54-BC30-F38B5CD96E02}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7F269509-B410-4B54-BC30-F38B5CD96E02}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {F7B128EB-CC57-4D28-8CB1-FB905067127C}
+	EndGlobalSection
+EndGlobal
