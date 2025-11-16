@@ -3,13 +3,18 @@
     x:Class="Homework2.Maui.AppShell"
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
-    xmlns:local="clr-namespace:Homework2.Maui"
+    xmlns:views="clr-namespace:Homework2.Maui.Views"
     Shell.FlyoutBehavior="Disabled"
     Title="Homework2.Maui">
 
-    <ShellContent
-        Title="Home"
-        ContentTemplate="{DataTemplate local:MainPage}"
-        Route="MainPage" />
+    <TabBar>
+        <Tab Title="Patients" Icon="dotnet_bot.png">
+            <ShellContent
+                Title="Patients"
+                ContentTemplate="{DataTemplate views:PatientListPage}"
+                Route="PatientListPage" />
+        </Tab>
+        
+        </TabBar>
 
 </Shell>
