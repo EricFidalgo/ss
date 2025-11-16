@@ -1,6 +1,5 @@
 ﻿using Homework2.Maui.Services;
 using Homework2.Maui.Views;
-using Homework2.Maui.ViewModels;
 
 namespace Homework2.Maui;
 
@@ -23,9 +22,6 @@ public static class MauiProgram
         // Register the pages
         builder.Services.AddTransient<PatientListPage>();
         builder.Services.AddTransient<PatientDetailPage>();
-        
-        // Register the ViewModels
-        builder.Services.AddTransient<PatientDetailViewModel>();
 
         return builder.Build();
     }
