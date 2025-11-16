@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("Homework2.Maui")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0+b747c9a4d8f6ffcf110e640a41ad890b3d72785b")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0+27058a356174a869fd7d51fb526ec8b8c1d1fd7f")]
 [assembly: System.Reflection.AssemblyProductAttribute("Homework2.Maui")]
 [assembly: System.Reflection.AssemblyTitleAttribute("Homework2.Maui")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

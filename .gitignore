@@ -1,0 +1,13 @@
+# C#/.NET Build Artifacts
+[Oo]bj/
+[Bb]in/
+
+# .NET temporary files
+.vs/
+.vscode/
+
+# MAUI specific
+*.Generated.cs
+
+# OS-specific
+.DS_Store
