@@ -51,3 +51,15 @@ build_metadata.AdditionalFiles.GenKind = Xaml
 build_metadata.AdditionalFiles.ManifestResourceName = Homework2.Maui.Views.PatientListPage.xaml
 build_metadata.AdditionalFiles.TargetPath = Views/PatientListPage.xaml
 build_metadata.AdditionalFiles.RelativePath = Views/PatientListPage.xaml
+
+[/Users/ericfidalgo/Desktop/COP 4870/homework/Homework2/Homework2.Maui/Views/PhysicianDetailPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Homework2.Maui.Views.PhysicianDetailPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Views/PhysicianDetailPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Views/PhysicianDetailPage.xaml
+
+[/Users/ericfidalgo/Desktop/COP 4870/homework/Homework2/Homework2.Maui/Views/PhysicianListPage.xaml]
+build_metadata.AdditionalFiles.GenKind = Xaml
+build_metadata.AdditionalFiles.ManifestResourceName = Homework2.Maui.Views.PhysicianListPage.xaml
+build_metadata.AdditionalFiles.TargetPath = Views/PhysicianListPage.xaml
+build_metadata.AdditionalFiles.RelativePath = Views/PhysicianListPage.xaml

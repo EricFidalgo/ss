@@ -22,6 +22,9 @@ public static class MauiProgram
         // Register the pages
         builder.Services.AddTransient<PatientListPage>();
         builder.Services.AddTransient<PatientDetailPage>();
+        
+        builder.Services.AddTransient<PhysicianListPage>();
+        builder.Services.AddTransient<PhysicianDetailPage>();
 
         return builder.Build();
     }

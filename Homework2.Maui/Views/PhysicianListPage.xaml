@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:Homework2.Maui.Models"
+             x:Class="Homework2.Maui.Views.PhysicianListPage"
+             Title="Physicians">
+    
+    <Grid RowDefinitions="Auto, *">
+        <Button Grid.Row="0" 
+                Text="Add Physician" 
+                Clicked="OnAddPhysicianClicked"
+                Margin="10"/>
+
+        <CollectionView Grid.Row="1" 
+                        x:Name="physiciansCollectionView"
+                        SelectionMode="Single"
+                        SelectionChanged="OnPhysicianSelected">
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:Physician">
+                    <VerticalStackLayout Padding="10">
+                        <Label Text="{Binding name}" FontSize="Medium" FontAttributes="Bold" />
+                        <Label Text="{Binding license_number}" FontSize="Small" />
+                    </VerticalStackLayout>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </Grid>
+    
+</ContentPage>

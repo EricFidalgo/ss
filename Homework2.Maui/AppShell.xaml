@@ -15,6 +15,13 @@
                 Route="PatientListPage" />
         </Tab>
         
-        </TabBar>
+        <Tab Title="Physicians" Icon="dotnet_bot.png">
+            <ShellContent
+                Title="Physicians"
+                ContentTemplate="{DataTemplate views:PhysicianListPage}"
+                Route="PhysicianListPage" />
+        </Tab>
+        
+    </TabBar>
 
 </Shell>

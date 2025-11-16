@@ -53,9 +53,40 @@ namespace Homework2.Maui.Services
             }
         }
 
-        // --- Physician CRUD (You would add methods here) ---
+        // --- Physician CRUD (Now implemented) ---
+        
         public List<Physician?> GetPhysicians() => _physicians;
-        // ... AddPhysician, UpdatePhysician, DeletePhysician, etc.
+        
+        public Physician? GetPhysician(int id) => _physicians.FirstOrDefault(p => p?.Id == id);
+
+        public Physician AddPhysician(Physician physician)
+        {
+            physician.Id = _nextPhysicianId++;
+            _physicians.Add(physician);
+            return physician;
+        }
+
+        public void UpdatePhysician(Physician updatedPhysician)
+        {
+            var physician = GetPhysician(updatedPhysician.Id ?? -1);
+            if (physician != null)
+            {
+                physician.name = updatedPhysician.name;
+                physician.license_number = updatedPhysician.license_number;
+                physician.graduation = updatedPhysician.graduation;
+                physician.specializations = updatedPhysician.specializations;
+                // Note: unavailable_hours is managed by appointments, not this form.
+            }
+        }
+
+        public void DeletePhysician(int physicianId)
+        {
+            var physician = GetPhysician(physicianId);
+            if (physician != null)
+            {
+                _physicians.Remove(physician);
+            }
+        }
 
 
         // --- Appointment CRUD (You would add methods here) ---
