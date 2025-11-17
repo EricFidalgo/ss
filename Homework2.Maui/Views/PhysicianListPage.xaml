@@ -76,7 +76,6 @@
                               RowSpacing="10"
                               ColumnSpacing="12">
                             
-                            <!-- Profile Icon -->
                             <Frame Grid.Row="0" Grid.Column="0" Grid.RowSpan="2"
                                    BackgroundColor="{StaticResource Secondary}"
                                    CornerRadius="35"
@@ -85,57 +84,52 @@
                                    WidthRequest="70"
                                    HeightRequest="70"
                                    VerticalOptions="Start">
-                                <Label Text="👨‍⚕️" 
+                                <Label Text="🩺" 
                                        FontSize="35"
                                        HorizontalOptions="Center"
                                        VerticalOptions="Center"/>
                             </Frame>
                             
-                            <!-- VIEW MODE: Physician Name -->
-                            <Label x:Name="NameLabel"
-                                   Grid.Row="0" Grid.Column="1"
+                            <Label Grid.Row="0" Grid.Column="1"
                                    Text="{Binding name, StringFormat='Dr. {0}'}" 
+                                   IsVisible="{Binding IsNotEditing}"
                                    FontSize="20" 
                                    FontAttributes="Bold"
                                    TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
                                    VerticalOptions="End"/>
                             
-                            <!-- EDIT MODE: Physician Name Entry -->
-                            <Entry x:Name="NameEntry"
-                                   Grid.Row="0" Grid.Column="1"
+                            <Entry Grid.Row="0" Grid.Column="1"
                                    Text="{Binding name}"
-                                   IsVisible="False"
-                                   Placeholder="Physician Name"
+                                   IsVisible="{Binding IsEditing}"
+                                   Placeholder="Name"
                                    FontSize="16"
                                    VerticalOptions="End"/>
                             
-                            <!-- Physician ID -->
-                            <Frame Grid.Row="1" Grid.Column="1"
-                                   BackgroundColor="{StaticResource Primary}"
-                                   CornerRadius="8"
-                                   Padding="8,4"
-                                   HasShadow="False"
-                                   HorizontalOptions="Start">
-                                <Label Text="{Binding Id, StringFormat='ID: {0}'}" 
-                                       FontSize="11"
-                                       FontAttributes="Bold"
-                                       TextColor="White"/>
-                            </Frame>
+                            <Label Grid.Row="1" Grid.Column="1"
+                                   Text="{Binding SpecializationText}" 
+                                   IsVisible="{Binding IsNotEditing}"
+                                   FontSize="14"
+                                   TextColor="{StaticResource Gray500}"
+                                   VerticalOptions="Start"/>
                             
-                            <!-- Divider -->
+                            <Entry Grid.Row="1" Grid.Column="1"
+                                   Text="{Binding SpecializationText}"
+                                   IsVisible="{Binding IsEditing}"
+                                   Placeholder="Specialization (comma separated)"
+                                   FontSize="14"
+                                   VerticalOptions="Start"/>
+                            
                             <BoxView Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
                                      HeightRequest="1"
                                      Color="{StaticResource Gray200}"
                                      Margin="0,5,0,5"/>
                             
-                            <!-- Info Grid -->
                             <Grid Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
-                                  RowDefinitions="Auto,Auto,Auto"
+                                  RowDefinitions="Auto,Auto"
                                   ColumnDefinitions="Auto,*"
                                   RowSpacing="8"
                                   ColumnSpacing="10">
                                 
-                                <!-- License Number -->
                                 <Frame Grid.Row="0" Grid.Column="0"
                                        BackgroundColor="{StaticResource Gray100}"
                                        CornerRadius="20"
@@ -143,29 +137,25 @@
                                        HasShadow="False"
                                        WidthRequest="36"
                                        HeightRequest="36">
-                                    <Label Text="🏥" FontSize="16" 
+                                    <Label Text="📜" FontSize="16" 
                                            HorizontalOptions="Center"
                                            VerticalOptions="Center"/>
                                 </Frame>
                                 <VerticalStackLayout Grid.Row="0" Grid.Column="1" 
-                                                   VerticalOptions="Center">
+                                                     VerticalOptions="Center">
                                     <Label Text="License Number" 
                                            FontSize="11"
                                            TextColor="{StaticResource Gray500}"
                                            FontAttributes="Bold"/>
-                                    <!-- VIEW MODE -->
-                                    <Label x:Name="LicenseLabel"
-                                           Text="{Binding license_number}" 
+                                    <Label Text="{Binding license_number}" 
+                                           IsVisible="{Binding IsNotEditing}"
                                            FontSize="14"
                                            TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"/>
-                                    <!-- EDIT MODE -->
-                                    <Entry x:Name="LicenseEntry"
-                                           Text="{Binding license_number}"
-                                           IsVisible="False"
+                                    <Entry Text="{Binding license_number}"
+                                           IsVisible="{Binding IsEditing}"
                                            FontSize="14"/>
                                 </VerticalStackLayout>
                                 
-                                <!-- Graduation -->
                                 <Frame Grid.Row="1" Grid.Column="0"
                                        BackgroundColor="{StaticResource Gray100}"
                                        CornerRadius="20"
@@ -178,60 +168,21 @@
                                            VerticalOptions="Center"/>
                                 </Frame>
                                 <VerticalStackLayout Grid.Row="1" Grid.Column="1"
-                                                   VerticalOptions="Center">
+                                                     VerticalOptions="Center">
                                     <Label Text="Graduated" 
                                            FontSize="11"
                                            TextColor="{StaticResource Gray500}"
                                            FontAttributes="Bold"/>
-                                    <!-- VIEW MODE -->
-                                    <Label x:Name="GraduationLabel"
-                                           Text="{Binding graduation, StringFormat='{0:MMMM yyyy}'}" 
+                                    <Label Text="{Binding graduation, StringFormat='{0:MMMM dd, yyyy}'}" 
+                                           IsVisible="{Binding IsNotEditing}"
                                            FontSize="14"
                                            TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"/>
-                                    <!-- EDIT MODE -->
-                                    <DatePicker x:Name="GraduationPicker"
-                                                Date="{Binding graduation}"
-                                                IsVisible="False"
+                                    <DatePicker Date="{Binding graduation}"
+                                                IsVisible="{Binding IsEditing}"
                                                 FontSize="14"/>
-                                </VerticalStackLayout>
-                                
-                                <!-- Specializations -->
-                                <Frame Grid.Row="2" Grid.Column="0"
-                                       BackgroundColor="{StaticResource Gray100}"
-                                       CornerRadius="20"
-                                       Padding="8"
-                                       HasShadow="False"
-                                       WidthRequest="36"
-                                       HeightRequest="36">
-                                    <Label Text="⭐" FontSize="16"
-                                           HorizontalOptions="Center"
-                                           VerticalOptions="Center"/>
-                                </Frame>
-                                <VerticalStackLayout Grid.Row="2" Grid.Column="1"
-                                                   VerticalOptions="Center">
-                                    <Label Text="Specializations" 
-                                           FontSize="11"
-                                           TextColor="{StaticResource Gray500}"
-                                           FontAttributes="Bold"/>
-                                    <!-- VIEW MODE -->
-                                    <Label x:Name="SpecializationsLabel"
-                                           FontSize="14"
-                                           TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}">
-                                        <Label.FormattedText>
-                                            <FormattedString>
-                                                <Span Text="{Binding specializations, Converter={StaticResource ListToStringConverter}}" />
-                                            </FormattedString>
-                                        </Label.FormattedText>
-                                    </Label>
-                                    <!-- EDIT MODE -->
-                                    <Entry x:Name="SpecializationsEntry"
-                                           IsVisible="False"
-                                           Placeholder="Comma-separated specializations"
-                                           FontSize="14"/>
                                 </VerticalStackLayout>
                             </Grid>
 
-                            <!-- Inline Action Buttons -->
                             <Grid Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2"
                                   ColumnDefinitions="*,*,*"
                                   ColumnSpacing="8"

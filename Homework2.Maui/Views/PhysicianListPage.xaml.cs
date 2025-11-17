@@ -65,14 +65,6 @@ public partial class PhysicianListPage : ContentPage
         await Shell.Current.GoToAsync(nameof(PhysicianDetailPage));
     }
 
-    private async void OnInlineEditClicked(object sender, EventArgs e)
-    {
-        if (sender is VisualElement button && button.BindingContext is Physician physician)
-        {
-            await Shell.Current.GoToAsync($"{nameof(PhysicianDetailPage)}?id={physician.Id}");
-        }
-    }
-
     private async void OnDialogEditClicked(object sender, EventArgs e)
     {
         if (sender is VisualElement button && button.BindingContext is Physician physician)
@@ -87,7 +79,43 @@ public partial class PhysicianListPage : ContentPage
         }
     }
 
-    // FIXED: Added missing Delete handler
+    private async void OnPhysicianSelected(object sender, SelectionChangedEventArgs e)
+    {
+        if (e.CurrentSelection.FirstOrDefault() is Physician physician)
+        {
+            await Shell.Current.GoToAsync($"{nameof(PhysicianDetailPage)}?id={physician.Id}");
+            physiciansCollectionView.SelectedItem = null;
+        }
+    }
+
+    private void OnInlineEditClicked(object sender, EventArgs e)
+    {
+        if (sender is Button button && button.BindingContext is Physician physician)
+        {
+            if (physician.IsEditing)
+            {
+                // SAVE ACTION
+                // Call the service to save changes
+                _medicalDataService.UpdatePhysician(physician);
+                
+                // Switch back to View Mode
+                physician.IsEditing = false;
+                button.Text = "✏️ Edit Inline";
+                button.BackgroundColor = (Color)Application.Current.Resources["Primary"]; 
+            }
+            else
+            {
+                // START EDITING ACTION
+                physician.IsEditing = true;
+                
+                // Change button to "Save"
+                button.Text = "💾 Save";
+                button.BackgroundColor = Colors.Green;
+            }
+        }
+    }
+
+    // Ensure this method is also present for the "Delete" button
     private async void OnInlineDeleteClicked(object sender, EventArgs e)
     {
         if (sender is VisualElement button && button.BindingContext is Physician physician)
@@ -98,15 +126,6 @@ public partial class PhysicianListPage : ContentPage
                 _medicalDataService.DeletePhysician(physician.Id ?? 0);
                 RefreshPhysicianList();
             }
-        }
-    }
-
-    private async void OnPhysicianSelected(object sender, SelectionChangedEventArgs e)
-    {
-        if (e.CurrentSelection.FirstOrDefault() is Physician physician)
-        {
-            await Shell.Current.GoToAsync($"{nameof(PhysicianDetailPage)}?id={physician.Id}");
-            physiciansCollectionView.SelectedItem = null;
         }
     }
 }

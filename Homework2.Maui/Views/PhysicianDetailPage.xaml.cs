@@ -16,9 +16,7 @@ public partial class PhysicianDetailPage : ContentPage
         {
             if (string.IsNullOrEmpty(value))
             {
-                Title = "Add Physician";
-                _currentPhysician = new Physician();
-                DeleteButton.IsVisible = false;
+                SetupNewPhysician();
             }
             else
             {
@@ -27,9 +25,7 @@ public partial class PhysicianDetailPage : ContentPage
 
                 if (physician == null)
                 {
-                    Title = "Add Physician";
-                    _currentPhysician = new Physician();
-                    DeleteButton.IsVisible = false;
+                    SetupNewPhysician();
                 }
                 else
                 {
@@ -38,6 +34,7 @@ public partial class PhysicianDetailPage : ContentPage
                     NameEntry.Text = _currentPhysician.name;
                     LicenseEntry.Text = _currentPhysician.license_number;
                     GraduationPicker.Date = _currentPhysician.graduation;
+                    // Join the list into a string for display
                     SpecializationsEntry.Text = string.Join(", ", _currentPhysician.specializations);
                     DeleteButton.IsVisible = true;
                 }
@@ -49,14 +46,21 @@ public partial class PhysicianDetailPage : ContentPage
     {
         InitializeComponent();
         _medicalDataService = medicalDataService;
+        SetupNewPhysician();
+    }
 
-        // Initialize with a new physician by default
+    private void SetupNewPhysician()
+    {
         _currentPhysician = new Physician();
         Title = "Add Physician";
         DeleteButton.IsVisible = false;
+        // Clear fields
+        if (NameEntry != null) NameEntry.Text = string.Empty;
+        if (LicenseEntry != null) LicenseEntry.Text = string.Empty;
+        if (SpecializationsEntry != null) SpecializationsEntry.Text = string.Empty;
+        if (GraduationPicker != null) GraduationPicker.Date = DateTime.Today;
     }
 
-    // Helper method to determine how to close the page (Modal vs Standard)
     private async Task ClosePageAsync()
     {
         if (Navigation.ModalStack.Count > 0 && Navigation.ModalStack.Last() == this)
@@ -75,10 +79,11 @@ public partial class PhysicianDetailPage : ContentPage
         _currentPhysician.license_number = LicenseEntry.Text;
         _currentPhysician.graduation = GraduationPicker.Date;
 
-        _currentPhysician.specializations = SpecializationsEntry.Text
-            .Split(',')
+        // Safe split handling
+        var specsText = SpecializationsEntry.Text ?? string.Empty;
+        _currentPhysician.specializations = specsText
+            .Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries)
             .Select(s => s.Trim())
-            .Where(s => !string.IsNullOrEmpty(s))
             .ToList();
 
         if (_currentPhysician.Id == null)
