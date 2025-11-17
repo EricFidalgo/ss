@@ -4,24 +4,26 @@
     xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:views="clr-namespace:Homework2.Maui.Views"
-    Shell.FlyoutBehavior="Disabled"
-    Title="Homework2.Maui">
+    Shell.FlyoutBehavior="Flyout"
+    Title="Medical Records">
 
-    <TabBar>
+    <!-- Flyout Menu Items -->
+    <FlyoutItem Title="Patients" Icon="{OnPlatform Default='dotnet_bot.png'}">
         <ShellContent
-            Title="Patients"
             ContentTemplate="{DataTemplate views:PatientListPage}"
             Route="PatientListPage" />
-        
+    </FlyoutItem>
+    
+    <FlyoutItem Title="Physicians" Icon="{OnPlatform Default='dotnet_bot.png'}">
         <ShellContent
-            Title="Physicians"
             ContentTemplate="{DataTemplate views:PhysicianListPage}"
             Route="PhysicianListPage" />
+    </FlyoutItem>
 
+    <FlyoutItem Title="Appointments" Icon="{OnPlatform Default='dotnet_bot.png'}">
         <ShellContent
-            Title="Appointments"
             ContentTemplate="{DataTemplate views:AppointmentListPage}"
             Route="AppointmentListPage" />
-    </TabBar>
+    </FlyoutItem>
 
 </Shell>
