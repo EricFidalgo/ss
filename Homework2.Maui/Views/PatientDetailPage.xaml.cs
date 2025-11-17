@@ -9,30 +9,42 @@ public partial class PatientDetailPage : ContentPage
 {
     private readonly MedicalDataService _medicalDataService;
     private Patient _currentPatient;
-    
+
     // This property will be set by the navigation system
     public string PatientId { set
     {
-        int patientId = Convert.ToInt32(value);
-        // Load the patient from the service
-        _currentPatient = _medicalDataService.GetPatient(patientId);
-        
-        if (_currentPatient == null)
+        // Check for new vs. existing *before* converting
+        if (string.IsNullOrEmpty(value))
         {
             // It's a new patient
             Title = "Add Patient";
             _currentPatient = new Patient();
+            DeleteButton.IsVisible = false;
         }
         else
         {
             // It's an existing patient
-            Title = "Edit Patient";
-            NameEntry.Text = _currentPatient.name;
-            AddressEntry.Text = _currentPatient.address;
-            BirthdatePicker.Date = _currentPatient.birthdate;
-            RaceEntry.Text = _currentPatient.race;
-            GenderEntry.Text = _currentPatient.gender;
-            DeleteButton.IsVisible = true;
+            int patientId = Convert.ToInt32(value);
+            _currentPatient = _medicalDataService.GetPatient(patientId);
+
+            if (_currentPatient == null)
+            {
+                // Fallback for bad ID
+                Title = "Add Patient";
+                _currentPatient = new Patient();
+                DeleteButton.IsVisible = false;
+            }
+            else
+            {
+                // Fill form with existing data
+                Title = "Edit Patient";
+                NameEntry.Text = _currentPatient.name;
+                AddressEntry.Text = _currentPatient.address;
+                BirthdatePicker.Date = _currentPatient.birthdate;
+                RaceEntry.Text = _currentPatient.race;
+                GenderEntry.Text = _currentPatient.gender;
+                DeleteButton.IsVisible = true;
+            }
         }
     }}
 
@@ -40,6 +52,14 @@ public partial class PatientDetailPage : ContentPage
     {
         InitializeComponent();
         _medicalDataService = medicalDataService;
+
+        // --- THIS IS THE FIX ---
+        // Create a new patient by default. 
+        // If we are editing, the 'PatientId' property will
+        // overwrite this with the one from the service.
+        _currentPatient = new Patient();
+        Title = "Add Patient";
+        DeleteButton.IsVisible = false;
     }
 
     private async void OnSaveClicked(object sender, EventArgs e)

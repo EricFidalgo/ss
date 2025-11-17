@@ -14,25 +14,36 @@ public partial class PhysicianDetailPage : ContentPage
     // This property will be set by the navigation system
     public string PhysicianId { set
     {
-        int physicianId = Convert.ToInt32(value);
-        // Load the physician from the service
-        _currentPhysician = _medicalDataService.GetPhysician(physicianId);
-        
-        if (_currentPhysician == null)
+        if (string.IsNullOrEmpty(value))
         {
             // It's a new physician
             Title = "Add Physician";
             _currentPhysician = new Physician();
+            DeleteButton.IsVisible = false; // Hide delete button for new physician
         }
         else
         {
             // It's an existing physician
-            Title = "Edit Physician";
-            NameEntry.Text = _currentPhysician.name;
-            LicenseEntry.Text = _currentPhysician.license_number;
-            GraduationPicker.Date = _currentPhysician.graduation;
-            SpecializationsEntry.Text = string.Join(", ", _currentPhysician.specializations);
-            DeleteButton.IsVisible = true;
+            int physicianId = Convert.ToInt32(value);
+            _currentPhysician = _medicalDataService.GetPhysician(physicianId);
+            
+            if (_currentPhysician == null)
+            {
+                // Fallback in case of bad ID
+                Title = "Add Physician";
+                _currentPhysician = new Physician();
+                DeleteButton.IsVisible = false;
+            }
+            else
+            {
+                // Fill the form with existing data
+                Title = "Edit Physician";
+                NameEntry.Text = _currentPhysician.name;
+                LicenseEntry.Text = _currentPhysician.license_number;
+                GraduationPicker.Date = _currentPhysician.graduation;
+                SpecializationsEntry.Text = string.Join(", ", _currentPhysician.specializations);
+                DeleteButton.IsVisible = true;
+            }
         }
     }}
 
@@ -40,6 +51,14 @@ public partial class PhysicianDetailPage : ContentPage
     {
         InitializeComponent();
         _medicalDataService = medicalDataService;
+
+        // Set default state in case PhysicianId is set before constructor
+        if (_currentPhysician == null)
+        {
+             Title = "Add Physician";
+            _currentPhysician = new Physician();
+            DeleteButton.IsVisible = false;
+        }
     }
 
     private async void OnSaveClicked(object sender, EventArgs e)
