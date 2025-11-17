@@ -123,14 +123,6 @@ public partial class PatientListPage : ContentPage
         }
     }
 
-    private async void OnInlineEditClicked(object sender, EventArgs e)
-    {
-        if (sender is VisualElement button && button.BindingContext is Patient patient)
-        {
-            await Shell.Current.GoToAsync($"{nameof(PatientDetailPage)}?id={patient.Id}");
-        }
-    }
-
     private async void OnDialogEditClicked(object sender, EventArgs e)
     {
         if (sender is VisualElement button && button.BindingContext is Patient patient)
@@ -155,6 +147,33 @@ public partial class PatientListPage : ContentPage
             {
                 _medicalDataService.DeletePatient(patient.Id ?? 0);
                 RefreshPatientList();
+            }
+        }
+    }
+
+    private void OnInlineEditClicked(object sender, EventArgs e)
+    {
+        if (sender is Button button && button.BindingContext is Patient patient)
+        {
+            if (patient.IsEditing)
+            {
+                // SAVE ACTION
+                // Assuming you have an UpdatePatient method in your service
+                _medicalDataService.UpdatePatient(patient);
+                
+                // Switch back to View Mode
+                patient.IsEditing = false;
+                button.Text = "✏️ Edit Inline";
+                button.BackgroundColor = (Color)Application.Current.Resources["Primary"]; 
+            }
+            else
+            {
+                // START EDITING ACTION
+                patient.IsEditing = true;
+                
+                // Change button to "Save"
+                button.Text = "💾 Save";
+                button.BackgroundColor = Colors.Green;
             }
         }
     }

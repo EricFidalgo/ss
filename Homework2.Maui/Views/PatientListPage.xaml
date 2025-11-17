@@ -12,16 +12,14 @@
                      Order="Primary"
                      Priority="0">
             <ToolbarItem.IconImageSource>
-                <FontImageSource 
-                    Glyph="+" 
-                    FontFamily="OpenSansRegular"
-                    Color="{StaticResource Primary}"/>
+                <FontImageSource Glyph="+" 
+                                 FontFamily="OpenSansRegular"
+                                 Color="{StaticResource Primary}"/>
             </ToolbarItem.IconImageSource>
         </ToolbarItem>
     </ContentPage.ToolbarItems>
 
     <Grid RowDefinitions="Auto,Auto,*" Padding="15">
-        <!-- Header Section -->
         <Frame Grid.Row="0" 
                BackgroundColor="{StaticResource Primary}"
                CornerRadius="15"
@@ -42,8 +40,8 @@
                            VerticalOptions="Center"/>
                 </Frame>
                 <VerticalStackLayout Grid.Column="1" 
-                                   VerticalOptions="Center"
-                                   Spacing="5">
+                                     VerticalOptions="Center"
+                                     Spacing="5">
                     <Label Text="Patient Management" 
                            FontSize="22" 
                            FontAttributes="Bold"
@@ -57,7 +55,6 @@
             </Grid>
         </Frame>
 
-        <!-- Sorting Button -->
         <Frame Grid.Row="1"
                Padding="15"
                Margin="0,0,0,10"
@@ -74,7 +71,6 @@
                     CornerRadius="8"/>
         </Frame>
 
-        <!-- Patient List -->
         <CollectionView Grid.Row="2"
                         x:Name="patientsCollectionView"
                         SelectionMode="None"
@@ -93,8 +89,7 @@
                               Padding="15"
                               RowSpacing="10"
                               ColumnSpacing="12">
-                            
-                            <!-- Profile Icon -->
+                             
                             <Frame Grid.Row="0" Grid.Column="0" Grid.RowSpan="2"
                                    BackgroundColor="{StaticResource Secondary}"
                                    CornerRadius="35"
@@ -108,25 +103,23 @@
                                        HorizontalOptions="Center"
                                        VerticalOptions="Center"/>
                             </Frame>
-                            
-                            <!-- VIEW MODE: Patient Name -->
+                                             
                             <Label x:Name="NameLabel"
                                    Grid.Row="0" Grid.Column="1"
                                    Text="{Binding name}" 
+                                   IsVisible="{Binding IsNotEditing}"
                                    FontSize="20" 
                                    FontAttributes="Bold"
                                    TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
                                    VerticalOptions="End"/>
-                            
-                            <!-- EDIT MODE: Patient Name Entry -->
+                             
                             <Entry x:Name="NameEntry"
                                    Grid.Row="0" Grid.Column="1"
                                    Text="{Binding name}"
-                                   IsVisible="False"
+                                   IsVisible="{Binding IsEditing}"
                                    FontSize="16"
                                    VerticalOptions="End"/>
                             
-                            <!-- Patient ID -->
                             <Frame Grid.Row="1" Grid.Column="1"
                                    BackgroundColor="{StaticResource Primary}"
                                    CornerRadius="8"
@@ -139,20 +132,17 @@
                                        TextColor="White"/>
                             </Frame>
                             
-                            <!-- Divider -->
                             <BoxView Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
                                      HeightRequest="1"
                                      Color="{StaticResource Gray200}"
                                      Margin="0,5,0,5"/>
                             
-                            <!-- Info Grid -->
                             <Grid Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
                                   RowDefinitions="Auto,Auto,Auto"
                                   ColumnDefinitions="Auto,*"
                                   RowSpacing="8"
                                   ColumnSpacing="10">
                                 
-                                <!-- Address -->
                                 <Frame Grid.Row="0" Grid.Column="0"
                                        BackgroundColor="{StaticResource Gray100}"
                                        CornerRadius="20"
@@ -165,24 +155,22 @@
                                            VerticalOptions="Center"/>
                                 </Frame>
                                 <VerticalStackLayout Grid.Row="0" Grid.Column="1" 
-                                                   VerticalOptions="Center">
+                                                     VerticalOptions="Center">
                                     <Label Text="Address" 
                                            FontSize="11"
                                            TextColor="{StaticResource Gray500}"
                                            FontAttributes="Bold"/>
-                                    <!-- VIEW MODE -->
                                     <Label x:Name="AddressLabel"
                                            Text="{Binding address}" 
+                                           IsVisible="{Binding IsNotEditing}"
                                            FontSize="14"
                                            TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"/>
-                                    <!-- EDIT MODE -->
                                     <Entry x:Name="AddressEntry"
                                            Text="{Binding address}"
-                                           IsVisible="False"
+                                           IsVisible="{Binding IsEditing}"
                                            FontSize="14"/>
                                 </VerticalStackLayout>
                                 
-                                <!-- Birthdate -->
                                 <Frame Grid.Row="1" Grid.Column="0"
                                        BackgroundColor="{StaticResource Gray100}"
                                        CornerRadius="20"
@@ -195,24 +183,22 @@
                                            VerticalOptions="Center"/>
                                 </Frame>
                                 <VerticalStackLayout Grid.Row="1" Grid.Column="1"
-                                                   VerticalOptions="Center">
+                                                     VerticalOptions="Center">
                                     <Label Text="Date of Birth" 
                                            FontSize="11"
                                            TextColor="{StaticResource Gray500}"
                                            FontAttributes="Bold"/>
-                                    <!-- VIEW MODE -->
                                     <Label x:Name="BirthdateLabel"
                                            Text="{Binding birthdate, StringFormat='{0:MMMM dd, yyyy}'}" 
+                                           IsVisible="{Binding IsNotEditing}"
                                            FontSize="14"
                                            TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"/>
-                                    <!-- EDIT MODE -->
                                     <DatePicker x:Name="BirthdatePicker"
                                                 Date="{Binding birthdate}"
-                                                IsVisible="False"
+                                                IsVisible="{Binding IsEditing}"
                                                 FontSize="14"/>
                                 </VerticalStackLayout>
                                 
-                                <!-- Gender & Race -->
                                 <Frame Grid.Row="2" Grid.Column="0"
                                        BackgroundColor="{StaticResource Gray100}"
                                        CornerRadius="20"
@@ -225,25 +211,23 @@
                                            VerticalOptions="Center"/>
                                 </Frame>
                                 <VerticalStackLayout Grid.Row="2" Grid.Column="1"
-                                                   VerticalOptions="Center">
+                                                     VerticalOptions="Center">
                                     <Label Text="Demographics" 
                                            FontSize="11"
                                            TextColor="{StaticResource Gray500}"
                                            FontAttributes="Bold"/>
-                                    <!-- VIEW MODE -->
                                     <Label x:Name="GenderLabel"
                                            Text="{Binding gender}" 
+                                           IsVisible="{Binding IsNotEditing}"
                                            FontSize="14"
                                            TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"/>
-                                    <!-- EDIT MODE -->
                                     <Entry x:Name="GenderEntry"
                                            Text="{Binding gender}"
-                                           IsVisible="False"
+                                           IsVisible="{Binding IsEditing}"
                                            FontSize="14"/>
                                 </VerticalStackLayout>
                             </Grid>
 
-                            <!-- Inline Action Buttons -->
                             <Grid Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2"
                                   ColumnDefinitions="*,*,*"
                                   ColumnSpacing="8"
@@ -283,5 +267,4 @@
             </CollectionView.ItemTemplate>
         </CollectionView>
     </Grid>
-    
 </ContentPage>
