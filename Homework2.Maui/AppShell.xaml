@@ -8,28 +8,20 @@
     Title="Homework2.Maui">
 
     <TabBar>
+        <ShellContent
+            Title="Patients"
+            ContentTemplate="{DataTemplate views:PatientListPage}"
+            Route="PatientListPage" />
+        
+        <ShellContent
+            Title="Physicians"
+            ContentTemplate="{DataTemplate views:PhysicianListPage}"
+            Route="PhysicianListPage" />
 
-        <Tab Title="Patients" Icon="dotnet_bot.png">
-            <ShellContent
-                Title="Patients"
-                ContentTemplate="{DataTemplate views:PatientListPage}"
-                Route="PatientListPage" />
-        </Tab>
-
-        <Tab Title="Physicians" Icon="dotnet_bot.png">
-            <ShellContent
-                Title="Physicians"
-                ContentTemplate="{DataTemplate views:PhysicianListPage}"
-                Route="PhysicianListPage" />
-        </Tab>
-
-        <Tab Title="Appointments" Icon="dotnet_bot.png">
-            <ShellContent
-                Title="Appointments"
-                ContentTemplate="{DataTemplate views:AppointmentListPage}"
-                Route="AppointmentListPage" />
-        </Tab>
-
+        <ShellContent
+            Title="Appointments"
+            ContentTemplate="{DataTemplate views:AppointmentListPage}"
+            Route="AppointmentListPage" />
     </TabBar>
 
 </Shell>
