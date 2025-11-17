@@ -115,7 +115,6 @@ namespace Homework2.Maui.Services
         
         public Appointment? GetAppointment(int id) => _appointments.FirstOrDefault(a => a?.Id == id);
         
-        // Fixed: Check exact DateTime match, not just date
         public List<DateTime> GetAvailableSlots(DateTime date, Patient patient, List<Physician?> physicians, int? excludeAppointmentId = null)
         {
             var availableSlots = new List<DateTime>();
@@ -168,7 +167,6 @@ namespace Homework2.Maui.Services
             return availableSlots;
         }
 
-        // Fixed: Check exact DateTime match
         public List<Physician?> GetAvailablePhysicians(DateTime timeSlot, int? excludeAppointmentId = null)
         {
             return _physicians.Where(ph => 

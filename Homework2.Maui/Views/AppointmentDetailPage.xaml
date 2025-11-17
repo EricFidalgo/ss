@@ -23,7 +23,7 @@
                        VerticalOptions="Center"/>
             </Frame>
             
-            <!-- Patient Selection -->
+            <!-- Patient Selection with Picker -->
             <Frame Padding="15" 
                    BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
                    BorderColor="{StaticResource Gray200}"
@@ -33,15 +33,11 @@
                            FontSize="13"
                            FontAttributes="Bold"
                            TextColor="{StaticResource Primary}"/>
-                    <Button x:Name="PatientSelectButton"
-                            Text="Tap to Choose Patient"
-                            Clicked="OnSelectPatientClicked"
-                            HorizontalOptions="Fill"
-                            BackgroundColor="{StaticResource Secondary}"
-                            TextColor="{StaticResource Primary}"
+                    <Picker x:Name="PatientPicker"
+                            Title="Choose a patient"
+                            SelectedIndexChanged="OnPatientPickerChanged"
                             FontSize="15"
-                            HeightRequest="50"
-                            CornerRadius="10"/>
+                            TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"/>
                 </VerticalStackLayout>
             </Frame>
             
@@ -122,7 +118,7 @@
                 </VerticalStackLayout>
             </Frame>
 
-            <!-- Physician Selection -->
+            <!-- Physician Selection with Picker -->
             <Frame Padding="15" 
                    BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
                    BorderColor="{StaticResource Gray200}"
@@ -135,16 +131,11 @@
                     <Label Text="Choose from physicians available at the selected time" 
                            FontSize="11"
                            TextColor="{StaticResource Gray500}"/>
-                    <Button x:Name="PhysicianSelectButton" 
-                            Text="Tap to Choose Physician"
-                            Clicked="OnSelectPhysicianClicked"
-                            HorizontalOptions="Fill"
-                            BackgroundColor="{StaticResource Secondary}"
-                            TextColor="{StaticResource Primary}"
+                    <Picker x:Name="PhysicianPicker"
+                            Title="Choose a physician"
                             FontSize="15"
-                            HeightRequest="50"
-                            CornerRadius="10"
-                            IsEnabled="False"/>
+                            IsEnabled="False"
+                            TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"/>
                 </VerticalStackLayout>
             </Frame>
 
