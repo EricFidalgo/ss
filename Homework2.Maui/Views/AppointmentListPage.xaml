@@ -5,23 +5,21 @@
              x:Class="Homework2.Maui.Views.AppointmentListPage"
              Title="Appointments"
              BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource OffBlack}}">
-    
+
     <ContentPage.ToolbarItems>
         <ToolbarItem Text="Add Appointment" 
                      Clicked="OnAddAppointmentClicked"
                      Order="Primary"
                      Priority="0">
             <ToolbarItem.IconImageSource>
-                <FontImageSource 
-                    Glyph="+" 
-                    FontFamily="OpenSansRegular"
-                    Color="{StaticResource Primary}"/>
+                <FontImageSource Glyph="+" 
+                                 FontFamily="OpenSansRegular"
+                                 Color="{StaticResource Primary}"/>
             </ToolbarItem.IconImageSource>
         </ToolbarItem>
     </ContentPage.ToolbarItems>
 
     <Grid RowDefinitions="Auto,*" Padding="15">
-        <!-- Header Section -->
         <Frame Grid.Row="0" 
                BackgroundColor="{StaticResource Primary}"
                CornerRadius="15"
@@ -42,8 +40,8 @@
                            VerticalOptions="Center"/>
                 </Frame>
                 <VerticalStackLayout Grid.Column="1" 
-                                   VerticalOptions="Center"
-                                   Spacing="5">
+                                     VerticalOptions="Center"
+                                     Spacing="5">
                     <Label Text="Appointment Management" 
                            FontSize="22" 
                            FontAttributes="Bold"
@@ -57,7 +55,6 @@
             </Grid>
         </Frame>
 
-        <!-- Appointment List -->
         <CollectionView Grid.Row="1"
                         x:Name="appointmentsCollectionView"
                         SelectionMode="None"
@@ -75,8 +72,7 @@
                               Padding="15"
                               RowSpacing="12"
                               ColumnSpacing="12">
-                            
-                            <!-- Calendar Icon -->
+
                             <Frame Grid.Row="0" Grid.Column="0" Grid.RowSpan="2"
                                    BackgroundColor="{StaticResource Primary}"
                                    CornerRadius="12"
@@ -86,8 +82,8 @@
                                    HeightRequest="70"
                                    VerticalOptions="Start">
                                 <VerticalStackLayout Spacing="0" 
-                                                   HorizontalOptions="Center"
-                                                   VerticalOptions="Center">
+                                                     HorizontalOptions="Center"
+                                                     VerticalOptions="Center">
                                     <Label Text="{Binding hour, StringFormat='{0:MMM}'}" 
                                            FontSize="12"
                                            FontAttributes="Bold"
@@ -101,20 +97,19 @@
                                 </VerticalStackLayout>
                             </Frame>
                             
-                            <!-- VIEW MODE: Appointment Time -->
                             <Label x:Name="TimeLabel"
                                    Grid.Row="0" Grid.Column="1"
                                    Text="{Binding hour, StringFormat='{0:h:mm tt}'}" 
+                                   IsVisible="{Binding IsNotEditing}"
                                    FontSize="20" 
                                    FontAttributes="Bold"
                                    TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
                                    VerticalOptions="End"/>
                             
-                            <!-- EDIT MODE: Time Picker Button -->
                             <Button x:Name="TimeButton"
                                     Grid.Row="0" Grid.Column="1"
-                                    Text="Select Time"
-                                    IsVisible="False"
+                                    Text="{Binding hour, StringFormat='{0:h:mm tt}'}"
+                                    IsVisible="{Binding IsEditing}"
                                     Clicked="OnTimeButtonClicked"
                                     FontSize="14"
                                     Padding="8,5"
@@ -123,36 +118,32 @@
                                     BackgroundColor="{StaticResource Primary}"
                                     TextColor="White"/>
                             
-                            <!-- VIEW MODE: Date Display -->
                             <Label x:Name="DateLabel"
                                    Grid.Row="1" Grid.Column="1"
                                    Text="{Binding hour, StringFormat='{0:dddd, MMMM dd, yyyy}'}" 
+                                   IsVisible="{Binding IsNotEditing}"
                                    FontSize="13"
                                    TextColor="{StaticResource Gray600}"
                                    VerticalOptions="Start"/>
                             
-                            <!-- EDIT MODE: Date Picker -->
                             <DatePicker x:Name="DatePicker"
                                         Grid.Row="1" Grid.Column="1"
                                         Date="{Binding hour}"
-                                        IsVisible="False"
+                                        IsVisible="{Binding IsEditing}"
                                         FontSize="13"
                                         VerticalOptions="Start"/>
                             
-                            <!-- Divider -->
                             <BoxView Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
                                      HeightRequest="1"
                                      Color="{StaticResource Gray200}"
                                      Margin="0,5,0,5"/>
                             
-                            <!-- Info Grid -->
                             <Grid Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
                                   RowDefinitions="Auto,Auto"
                                   ColumnDefinitions="Auto,*"
                                   RowSpacing="10"
                                   ColumnSpacing="10">
                                 
-                                <!-- Patient Info -->
                                 <Frame Grid.Row="0" Grid.Column="0"
                                        BackgroundColor="{StaticResource Secondary}"
                                        CornerRadius="20"
@@ -165,21 +156,20 @@
                                            VerticalOptions="Center"/>
                                 </Frame>
                                 <VerticalStackLayout Grid.Row="0" Grid.Column="1" 
-                                                   VerticalOptions="Center">
+                                                     VerticalOptions="Center">
                                     <Label Text="Patient" 
                                            FontSize="11"
                                            TextColor="{StaticResource Gray500}"
                                            FontAttributes="Bold"/>
-                                    <!-- VIEW MODE -->
                                     <Label x:Name="PatientLabel"
                                            Text="{Binding patients.name}" 
+                                           IsVisible="{Binding IsNotEditing}"
                                            FontSize="15"
                                            FontAttributes="Bold"
                                            TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"/>
-                                    <!-- EDIT MODE -->
                                     <Button x:Name="PatientButton"
-                                            Text="Select Patient"
-                                            IsVisible="False"
+                                            Text="{Binding patients.name, TargetNullValue='Select Patient'}"
+                                            IsVisible="{Binding IsEditing}"
                                             Clicked="OnPatientButtonClicked"
                                             FontSize="13"
                                             Padding="8,4"
@@ -188,7 +178,6 @@
                                             TextColor="White"/>
                                 </VerticalStackLayout>
                                 
-                                <!-- Physician Info -->
                                 <Frame Grid.Row="1" Grid.Column="0"
                                        BackgroundColor="{StaticResource Secondary}"
                                        CornerRadius="20"
@@ -201,21 +190,20 @@
                                            VerticalOptions="Center"/>
                                 </Frame>
                                 <VerticalStackLayout Grid.Row="1" Grid.Column="1"
-                                                   VerticalOptions="Center">
+                                                     VerticalOptions="Center">
                                     <Label Text="Physician" 
                                            FontSize="11"
                                            TextColor="{StaticResource Gray500}"
                                            FontAttributes="Bold"/>
-                                    <!-- VIEW MODE -->
                                     <Label x:Name="PhysicianLabel"
                                            Text="{Binding physicians.name, StringFormat='Dr. {0}'}" 
+                                           IsVisible="{Binding IsNotEditing}"
                                            FontSize="15"
                                            FontAttributes="Bold"
                                            TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"/>
-                                    <!-- EDIT MODE -->
                                     <Button x:Name="PhysicianButton"
-                                            Text="Select Physician"
-                                            IsVisible="False"
+                                            Text="{Binding physicians.name, StringFormat='Dr. {0}', TargetNullValue='Select Physician'}"
+                                            IsVisible="{Binding IsEditing}"
                                             Clicked="OnPhysicianButtonClicked"
                                             FontSize="13"
                                             Padding="8,4"
@@ -225,7 +213,6 @@
                                 </VerticalStackLayout>
                             </Grid>
 
-                            <!-- Error Message (for edit mode validation) -->
                             <Label x:Name="ErrorLabel"
                                    Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2"
                                    IsVisible="False"
@@ -234,7 +221,6 @@
                                    FontSize="12"
                                    HorizontalOptions="Center"/>
 
-                            <!-- Inline Action Buttons -->
                             <Grid Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2"
                                   ColumnDefinitions="*,*,*"
                                   ColumnSpacing="8"
@@ -274,5 +260,4 @@
             </CollectionView.ItemTemplate>
         </CollectionView>
     </Grid>
-    
 </ContentPage>
