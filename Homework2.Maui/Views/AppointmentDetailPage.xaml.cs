@@ -193,9 +193,7 @@ public partial class AppointmentDetailPage : ContentPage
 
     private void UpdateAvailableSlots()
     {
-        var availablePhysicians = GetAvailablePhysiciansForSelectedTime();
-
-        if (_selectedPatient == null || availablePhysicians == null || !availablePhysicians.Any())
+        if (_selectedPatient == null)
         {
             TimeSlotsCollectionView.ItemsSource = null;
             SelectedTimeLabel.Text = "No time selected";
@@ -205,7 +203,7 @@ public partial class AppointmentDetailPage : ContentPage
         var selectedDate = AppointmentDatePicker.Date;
         int? excludeId = _currentAppointment?.Id;
 
-        var availableSlots = _medicalDataService.GetAvailableSlots(selectedDate, _selectedPatient, availablePhysicians, excludeId);
+        var availableSlots = _medicalDataService.GetAvailableSlots(selectedDate, _selectedPatient, excludeId);
         TimeSlotsCollectionView.ItemsSource = availableSlots;
     }
 

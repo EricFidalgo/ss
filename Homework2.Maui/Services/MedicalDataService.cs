@@ -115,7 +115,7 @@ namespace Homework2.Maui.Services
         
         public Appointment? GetAppointment(int id) => _appointments.FirstOrDefault(a => a?.Id == id);
         
-        public List<DateTime> GetAvailableSlots(DateTime date, Patient patient, List<Physician?> physicians, int? excludeAppointmentId = null)
+        public List<DateTime> GetAvailableSlots(DateTime date, Patient patient, int? excludeAppointmentId = null)
         {
             var availableSlots = new List<DateTime>();
             if (date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday)
@@ -145,7 +145,7 @@ namespace Homework2.Maui.Services
                         dt.Hour == timeSlot.Hour);
                 
                 // At least one physician must be free at this exact time
-                bool physicianAvailable = physicians.Any(ph => 
+                bool physicianAvailable = _physicians.Any(ph => 
                 {
                     if (ph == null) return false;
                     
