@@ -1,6 +1,7 @@
 using Homework2.Maui.Models;
 using Homework2.Maui.Services;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace Homework2.Maui.Views;
 
@@ -10,6 +11,9 @@ public partial class AppointmentDetailPage : ContentPage
     private readonly MedicalDataService _medicalDataService;
     private Appointment _currentAppointment;
     private DateTime _selectedTime;
+    private List<Patient?> _patients;
+    private List<Physician?> _availablePhysicians;
+    private List<DateTime> _availableSlots;
 
     public DateTime MinDate => DateTime.Today;
     public DateTime MaxDate => DateTime.Today.AddMonths(3);
@@ -24,7 +28,6 @@ public partial class AppointmentDetailPage : ContentPage
         }
         else
         {
-            // For editing existing appointments (future enhancement)
             Title = "Edit Appointment";
             DeleteButton.IsVisible = true;
         }
@@ -39,16 +42,23 @@ public partial class AppointmentDetailPage : ContentPage
         Title = "New Appointment";
         DeleteButton.IsVisible = false;
 
+        _patients = new List<Patient?>();
+        _availablePhysicians = new List<Physician?>();
+        _availableSlots = new List<DateTime>();
+
         LoadPatients();
         AppointmentDatePicker.Date = GetNextWeekday(DateTime.Today);
     }
 
     private void LoadPatients()
     {
-        var patients = _medicalDataService.GetPatients();
-        PatientPicker.ItemsSource = patients;
+        _patients = _medicalDataService.GetPatients();
         
-        if (patients.Any())
+        // Set ItemsSource and ItemDisplayBinding
+        PatientPicker.ItemsSource = _patients;
+        PatientPicker.ItemDisplayBinding = new Binding("name");
+        
+        if (_patients.Any())
         {
             PatientPicker.SelectedIndex = 0;
         }
@@ -61,7 +71,6 @@ public partial class AppointmentDetailPage : ContentPage
 
     private void OnDateSelected(object sender, DateChangedEventArgs e)
     {
-        // Check if it's a weekend
         if (e.NewDate.DayOfWeek == DayOfWeek.Saturday || e.NewDate.DayOfWeek == DayOfWeek.Sunday)
         {
             DisplayAlert("Invalid Date", "Appointments can only be scheduled Monday-Friday", "OK");
@@ -74,6 +83,11 @@ public partial class AppointmentDetailPage : ContentPage
 
     private void UpdateAvailableSlots()
     {
+        _selectedTime = default;
+        SelectedTimeLabel.Text = "No time selected";
+        PhysicianPicker.ItemsSource = null;
+        PhysicianPicker.SelectedIndex = -1;
+
         if (PatientPicker.SelectedItem is not Patient selectedPatient)
         {
             TimeSlotsCollectionView.ItemsSource = null;
@@ -82,11 +96,9 @@ public partial class AppointmentDetailPage : ContentPage
 
         var selectedDate = AppointmentDatePicker.Date;
         var physicians = _medicalDataService.GetPhysicians();
-        var availableSlots = _medicalDataService.GetAvailableSlots(selectedDate, selectedPatient, physicians);
+        _availableSlots = _medicalDataService.GetAvailableSlots(selectedDate, selectedPatient, physicians);
 
-        TimeSlotsCollectionView.ItemsSource = availableSlots;
-        SelectedTimeLabel.Text = "No time selected";
-        PhysicianPicker.ItemsSource = null;
+        TimeSlotsCollectionView.ItemsSource = _availableSlots;
     }
 
     private void OnTimeSlotSelected(object sender, SelectionChangedEventArgs e)
@@ -96,11 +108,12 @@ public partial class AppointmentDetailPage : ContentPage
             _selectedTime = selectedTime;
             SelectedTimeLabel.Text = $"Selected: {selectedTime:h:mm tt}";
 
-            // Load available physicians for this time slot
-            var availablePhysicians = _medicalDataService.GetAvailablePhysicians(selectedTime);
-            PhysicianPicker.ItemsSource = availablePhysicians;
+            _availablePhysicians = _medicalDataService.GetAvailablePhysicians(selectedTime);
             
-            if (availablePhysicians.Any())
+            PhysicianPicker.ItemsSource = _availablePhysicians;
+            PhysicianPicker.ItemDisplayBinding = new Binding("name");
+            
+            if (_availablePhysicians.Any())
             {
                 PhysicianPicker.SelectedIndex = 0;
             }
@@ -141,7 +154,6 @@ public partial class AppointmentDetailPage : ContentPage
 
     private async void OnDeleteClicked(object sender, EventArgs e)
     {
-        // For future implementation when editing appointments
         await DisplayAlert("Not Implemented", "Delete functionality coming soon", "OK");
     }
 

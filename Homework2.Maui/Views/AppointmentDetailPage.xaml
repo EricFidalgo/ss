@@ -11,7 +11,6 @@
             <Label Text="Select Patient" FontSize="Medium" FontAttributes="Bold" />
             <Picker x:Name="PatientPicker" 
                     Title="Choose a patient"
-                    ItemDisplayBinding="{Binding name}"
                     SelectedIndexChanged="OnPatientChanged" />
 
             <Label Text="Select Date" FontSize="Medium" FontAttributes="Bold" Margin="0,10,0,0" />
@@ -43,8 +42,7 @@
 
             <Label Text="Available Physicians" FontSize="Medium" FontAttributes="Bold" Margin="0,10,0,0" />
             <Picker x:Name="PhysicianPicker" 
-                    Title="Choose a physician"
-                    ItemDisplayBinding="{Binding name}" />
+                    Title="Choose a physician" />
 
             <Button Text="Save Appointment" 
                     Clicked="OnSaveClicked"

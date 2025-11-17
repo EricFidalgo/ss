@@ -1,28 +1,40 @@
 using Homework2.Maui.Models;
 using Homework2.Maui.Services;
+using System.Collections.ObjectModel;
 
 namespace Homework2.Maui.Views;
 
 public partial class PatientListPage : ContentPage
 {
     private readonly MedicalDataService _medicalDataService;
+    private ObservableCollection<Patient?> _patients;
 
     public PatientListPage(MedicalDataService medicalDataService)
     {
         InitializeComponent();
         _medicalDataService = medicalDataService;
+        _patients = new ObservableCollection<Patient?>();
+        patientsCollectionView.ItemsSource = _patients;
     }
 
     protected override void OnAppearing()
     {
         base.OnAppearing();
-        // Reload the list every time the page appears
-        patientsCollectionView.ItemsSource = _medicalDataService.GetPatients();
+        RefreshPatientList();
+    }
+
+    private void RefreshPatientList()
+    {
+        _patients.Clear();
+        var patients = _medicalDataService.GetPatients();
+        foreach (var patient in patients)
+        {
+            _patients.Add(patient);
+        }
     }
 
     private async void OnAddPatientClicked(object sender, EventArgs e)
     {
-        // Navigate to the detail page with no patient ID, indicating a new patient
         await Shell.Current.GoToAsync(nameof(PatientDetailPage));
     }
 
@@ -30,10 +42,7 @@ public partial class PatientListPage : ContentPage
     {
         if (e.CurrentSelection.FirstOrDefault() is Patient patient)
         {
-            // Navigate to the detail page, passing the patient's ID
             await Shell.Current.GoToAsync($"{nameof(PatientDetailPage)}?id={patient.Id}");
-            
-            // Clear selection
             patientsCollectionView.SelectedItem = null;
         }
     }
