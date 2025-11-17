@@ -77,7 +77,13 @@ public partial class PhysicianListPage : ContentPage
     {
         if (sender is VisualElement button && button.BindingContext is Physician physician)
         {
-            await Shell.Current.GoToAsync($"{nameof(PhysicianDetailPage)}?id={physician.Id}");
+            var detailPage = new PhysicianDetailPage(_medicalDataService);
+            
+            // Manually set the ID to trigger loading
+            detailPage.PhysicianId = physician.Id.ToString();
+
+            // Push as a Modal
+            await Navigation.PushModalAsync(detailPage);
         }
     }
 

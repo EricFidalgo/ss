@@ -135,7 +135,14 @@ public partial class PatientListPage : ContentPage
     {
         if (sender is VisualElement button && button.BindingContext is Patient patient)
         {
-            await Shell.Current.GoToAsync($"{nameof(PatientDetailPage)}?id={patient.Id}");
+            // 1. Create the page instance manually (injecting the service)
+            var detailPage = new PatientDetailPage(_medicalDataService);
+            
+            // 2. Manually trigger the data loading (since QueryProperty won't fire for Modals)
+            detailPage.PatientId = patient.Id.ToString();
+
+            // 3. Push as a Modal (Dialog)
+            await Navigation.PushModalAsync(detailPage);
         }
     }
 

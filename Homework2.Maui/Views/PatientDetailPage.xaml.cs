@@ -55,6 +55,19 @@ public partial class PatientDetailPage : ContentPage
         DeleteButton.IsVisible = false;
     }
 
+    // Helper method to determine how to close the page (Modal vs Standard)
+    private async Task ClosePageAsync()
+    {
+        if (Navigation.ModalStack.Count > 0 && Navigation.ModalStack.Last() == this)
+        {
+            await Navigation.PopModalAsync();
+        }
+        else
+        {
+            await Shell.Current.GoToAsync("..");
+        }
+    }
+
     private async void OnSaveClicked(object? sender, EventArgs e)
     {
         _currentPatient.name = NameEntry.Text;
@@ -72,7 +85,7 @@ public partial class PatientDetailPage : ContentPage
             _medicalDataService.UpdatePatient(_currentPatient);
         }
 
-        await Shell.Current.GoToAsync("..");
+        await ClosePageAsync();
     }
 
     private async void OnDeleteClicked(object? sender, EventArgs e)
@@ -83,7 +96,7 @@ public partial class PatientDetailPage : ContentPage
         if (answer)
         {
             _medicalDataService.DeletePatient(_currentPatient.Id.Value);
-            await Shell.Current.GoToAsync("..");
+            await ClosePageAsync();
         }
     }
 }

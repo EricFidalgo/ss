@@ -56,6 +56,19 @@ public partial class PhysicianDetailPage : ContentPage
         DeleteButton.IsVisible = false;
     }
 
+    // Helper method to determine how to close the page (Modal vs Standard)
+    private async Task ClosePageAsync()
+    {
+        if (Navigation.ModalStack.Count > 0 && Navigation.ModalStack.Last() == this)
+        {
+            await Navigation.PopModalAsync();
+        }
+        else
+        {
+            await Shell.Current.GoToAsync("..");
+        }
+    }
+
     private async void OnSaveClicked(object? sender, EventArgs e)
     {
         _currentPhysician.name = NameEntry.Text;
@@ -77,7 +90,7 @@ public partial class PhysicianDetailPage : ContentPage
             _medicalDataService.UpdatePhysician(_currentPhysician);
         }
 
-        await Shell.Current.GoToAsync("..");
+        await ClosePageAsync();
     }
 
     private async void OnDeleteClicked(object? sender, EventArgs e)
@@ -88,7 +101,7 @@ public partial class PhysicianDetailPage : ContentPage
         if (answer)
         {
             _medicalDataService.DeletePhysician(_currentPhysician.Id.Value);
-            await Shell.Current.GoToAsync("..");
+            await ClosePageAsync();
         }
     }
 }
