@@ -9,7 +9,6 @@
     <ScrollView>
         <VerticalStackLayout Padding="20" Spacing="20">
             
-            <!-- Header Icon -->
             <Frame BackgroundColor="{StaticResource Primary}"
                    CornerRadius="60"
                    Padding="25"
@@ -23,7 +22,6 @@
                        VerticalOptions="Center"/>
             </Frame>
             
-            <!-- Patient Selection with Picker -->
             <Frame Padding="15" 
                    BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
                    BorderColor="{StaticResource Gray200}"
@@ -33,15 +31,16 @@
                            FontSize="13"
                            FontAttributes="Bold"
                            TextColor="{StaticResource Primary}"/>
+                    
                     <Picker x:Name="PatientPicker"
                             Title="Choose a patient"
-                            SelectedIndexChanged="OnPatientPickerChanged"
+                            ItemDisplayBinding="{Binding name}"
+                            SelectedIndexChanged="OnPatientSelectedIndexChanged"
                             FontSize="15"
                             TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"/>
                 </VerticalStackLayout>
             </Frame>
             
-            <!-- Date Selection -->
             <Frame Padding="15" 
                    BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
                    BorderColor="{StaticResource Gray200}"
@@ -62,7 +61,6 @@
                 </VerticalStackLayout>
             </Frame>
 
-            <!-- Time Slots -->
             <Frame Padding="15" 
                    BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
                    BorderColor="{StaticResource Gray200}"
@@ -81,7 +79,7 @@
                                    SelectionChanged="OnTimeSlotSelected"
                                    HeightRequest="200">
                         <CollectionView.ItemsLayout>
-                            <GridItemsLayout Orientation="Vertical" 
+                             <GridItemsLayout Orientation="Vertical" 
                                            Span="3"
                                            HorizontalItemSpacing="8"
                                            VerticalItemSpacing="8"/>
@@ -118,7 +116,6 @@
                 </VerticalStackLayout>
             </Frame>
 
-            <!-- Physician Selection with Picker -->
             <Frame Padding="15" 
                    BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
                    BorderColor="{StaticResource Gray200}"
@@ -131,15 +128,16 @@
                     <Label Text="Choose from physicians available at the selected time" 
                            FontSize="11"
                            TextColor="{StaticResource Gray500}"/>
+                    
                     <Picker x:Name="PhysicianPicker"
                             Title="Choose a physician"
+                            ItemDisplayBinding="{Binding name}"
+                            SelectedIndexChanged="OnPhysicianSelectedIndexChanged"
                             FontSize="15"
-                            IsEnabled="False"
                             TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"/>
                 </VerticalStackLayout>
             </Frame>
 
-            <!-- Action Buttons -->
             <VerticalStackLayout Spacing="12" Margin="0,10,0,20">
                 <Button Text="💾 Save Appointment" 
                         Clicked="OnSaveClicked"
@@ -163,5 +161,4 @@
             </VerticalStackLayout>
         </VerticalStackLayout>
     </ScrollView>
-    
 </ContentPage>

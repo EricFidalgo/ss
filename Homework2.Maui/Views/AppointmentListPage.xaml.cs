@@ -29,7 +29,6 @@ public partial class AppointmentListPage : ContentPage
     {
         _appointments.Clear();
         
-        // Get appointments and sort by date/time
         var appointments = _medicalDataService.GetAppointments()
             .OrderBy(a => a?.hour)
             .ToList();
@@ -45,6 +44,29 @@ public partial class AppointmentListPage : ContentPage
     private async void OnAddAppointmentClicked(object sender, EventArgs e)
     {
         await Shell.Current.GoToAsync(nameof(AppointmentDetailPage));
+    }
+
+    // FIXED: Handles the "Edit" button inside the list row
+    private async void OnInlineEditClicked(object sender, EventArgs e)
+    {
+        if (sender is VisualElement button && button.BindingContext is Appointment appointment)
+        {
+            await Shell.Current.GoToAsync($"{nameof(AppointmentDetailPage)}?id={appointment.Id}");
+        }
+    }
+
+    // FIXED: Handles the "Delete" button inside the list row (if you added it)
+    private async void OnInlineDeleteClicked(object sender, EventArgs e)
+    {
+        if (sender is VisualElement button && button.BindingContext is Appointment appointment)
+        {
+            bool confirm = await DisplayAlert("Confirm", "Delete this appointment?", "Yes", "No");
+            if (confirm)
+            {
+                _medicalDataService.DeleteAppointment(appointment.Id);
+                RefreshAppointmentList();
+            }
+        }
     }
 
     private async void OnAppointmentSelected(object sender, SelectionChangedEventArgs e)
