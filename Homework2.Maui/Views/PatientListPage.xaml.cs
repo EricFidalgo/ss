@@ -10,6 +10,7 @@ public partial class PatientListPage : ContentPage
     private readonly MedicalDataService _medicalDataService;
     private ObservableCollection<Patient?> _patients;
     private List<Patient?> _allPatientsCache = new List<Patient?>();
+    private int _currentSortIndex = -1;
 
     public PatientListPage(MedicalDataService medicalDataService)
     {
@@ -32,31 +33,51 @@ public partial class PatientListPage : ContentPage
         ApplySort(); 
     }
 
-    private void OnSortChanged(object sender, EventArgs e)
+    private async void OnSortButtonClicked(object sender, EventArgs e)
     {
-        ApplySort();
-    }
-
-    private void OnClearSort(object sender, EventArgs e)
-    {
-        var sortPicker = this.FindByName<Picker>("SortPicker");
-        if (sortPicker != null)
+        var sortOptions = new[]
         {
-            sortPicker.SelectedIndex = -1;
+            "Name (A-Z)",
+            "Name (Z-A)",
+            "Date of Birth (Oldest)",
+            "Date of Birth (Newest)"
+        };
+
+        string action = await DisplayActionSheet(
+            "Sort Patients By",
+            "Cancel",
+            "Clear Sort",
+            sortOptions
+        );
+
+        if (action == "Cancel")
+            return;
+
+        if (action == "Clear Sort")
+        {
+            _currentSortIndex = -1;
+            SortButton.Text = "Sort Patients";
+            SortButton.BackgroundColor = Color.FromArgb("#512BD4");
+            RefreshPatientList();
+            return;
         }
-        RefreshPatientList();
+
+        _currentSortIndex = Array.IndexOf(sortOptions, action);
+        if (_currentSortIndex >= 0)
+        {
+            SortButton.Text = $"Sorted: {sortOptions[_currentSortIndex]}";
+            SortButton.BackgroundColor = Colors.Green;
+            ApplySort();
+        }
     }
 
     private void ApplySort()
     {
         if (_allPatientsCache == null) return;
 
-        var sortPicker = this.FindByName<Picker>("SortPicker");
-        int selectedIndex = sortPicker?.SelectedIndex ?? -1;
-
         IEnumerable<Patient?> sortedList;
 
-        switch (selectedIndex)
+        switch (_currentSortIndex)
         {
             case 0: // Name (A-Z)
                 sortedList = _allPatientsCache.OrderBy(p => p?.name);
@@ -118,7 +139,6 @@ public partial class PatientListPage : ContentPage
         }
     }
 
-    // FIXED: Added the missing Delete handler here
     private async void OnInlineDeleteClicked(object sender, EventArgs e)
     {
         if (sender is VisualElement button && button.BindingContext is Patient patient)

@@ -197,6 +197,18 @@ namespace Homework2.Maui.Services
             }).ToList();
         }
 
+        public bool IsPhysicianAvailable(Physician? physician, DateTime time)
+        {
+            if (physician == null || time == default)
+            {
+                return false;
+            }
+
+            // A physician is available if they don't have an appointment at the exact given time.
+            // This uses the unavailable_hours list which is managed when appointments are created/updated/deleted.
+            return !physician.unavailable_hours.Any(dt => dt == time);
+        }
+
         public Appointment CreateAppointment(Patient patient, Physician physician, DateTime time)
         {
             // Normalize the time to remove seconds and milliseconds

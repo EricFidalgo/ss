@@ -32,12 +32,12 @@
                            FontAttributes="Bold"
                            TextColor="{StaticResource Primary}"/>
                     
-                    <Picker x:Name="PatientPicker"
-                            Title="Choose a patient"
-                            ItemDisplayBinding="{Binding name}"
-                            SelectedIndexChanged="OnPatientSelectedIndexChanged"
-                            FontSize="15"
-                            TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"/>
+                    <Button x:Name="PatientButton"
+                            Text="Select Patient"
+                            Clicked="OnSelectPatientClicked"
+                            BackgroundColor="{StaticResource Primary}"
+                            TextColor="White"
+                            CornerRadius="8"/>
                 </VerticalStackLayout>
             </Frame>
             
@@ -129,12 +129,12 @@
                            FontSize="11"
                            TextColor="{StaticResource Gray500}"/>
                     
-                    <Picker x:Name="PhysicianPicker"
-                            Title="Choose a physician"
-                            ItemDisplayBinding="{Binding name}"
-                            SelectedIndexChanged="OnPhysicianSelectedIndexChanged"
-                            FontSize="15"
-                            TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"/>
+                    <Button x:Name="PhysicianButton"
+                            Text="Select Physician"
+                            Clicked="OnSelectPhysicianClicked"
+                            BackgroundColor="{StaticResource Primary}"
+                            TextColor="White"
+                            CornerRadius="8"/>
                 </VerticalStackLayout>
             </Frame>
 

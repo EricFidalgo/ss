@@ -57,40 +57,21 @@
             </Grid>
         </Frame>
 
-        <!-- Sorting Controls -->
+        <!-- Sorting Button -->
         <Frame Grid.Row="1"
                Padding="15"
                Margin="0,0,0,10"
                BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
                BorderColor="{StaticResource Gray200}"
                CornerRadius="12">
-            <Grid ColumnDefinitions="Auto,*,Auto" ColumnSpacing="10">
-                <Label Grid.Column="0"
-                       Text="Sort by:"
-                       FontSize="14"
-                       FontAttributes="Bold"
-                       VerticalOptions="Center"
-                       TextColor="{StaticResource Primary}"/>
-                <Picker Grid.Column="1"
-                        x:Name="SortPicker"
-                        Title="Choose sorting"
-                        SelectedIndexChanged="OnSortChanged"
-                        FontSize="14">
-                    <Picker.Items>
-                        <x:String>Name (A-Z)</x:String>
-                        <x:String>Name (Z-A)</x:String>
-                        <x:String>Date of Birth (Oldest)</x:String>
-                        <x:String>Date of Birth (Newest)</x:String>
-                    </Picker.Items>
-                </Picker>
-                <Button Grid.Column="2"
-                        Text="Clear"
-                        Clicked="OnClearSort"
-                        FontSize="12"
-                        Padding="10,5"
-                        BackgroundColor="{StaticResource Gray200}"
-                        TextColor="{StaticResource Gray600}"/>
-            </Grid>
+            <Button x:Name="SortButton"
+                    Text="Sort Patients"
+                    Clicked="OnSortButtonClicked"
+                    BackgroundColor="{StaticResource Primary}"
+                    TextColor="White"
+                    FontSize="15"
+                    HeightRequest="50"
+                    CornerRadius="8"/>
         </Frame>
 
         <!-- Patient List -->
