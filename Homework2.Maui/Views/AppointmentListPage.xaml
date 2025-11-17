@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:models="clr-namespace:Homework2.Maui.Models"
+             x:Class="Homework2.Maui.Views.AppointmentListPage"
+             Title="Appointments">
+    
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Add" Clicked="OnAddAppointmentClicked" />
+    </ContentPage.ToolbarItems>
+
+    <CollectionView x:Name="appointmentsCollectionView"
+                    SelectionMode="Single"
+                    SelectionChanged="OnAppointmentSelected">
+        <CollectionView.ItemTemplate>
+            <DataTemplate x:DataType="models:Appointment">
+                <Frame Padding="10" Margin="5,5,5,0" BorderColor="LightGray">
+                    <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*">
+                        <Label Grid.Row="0" 
+                              Text="{Binding patients.name, StringFormat='Patient: {0}'}" 
+                              FontSize="Medium" 
+                              FontAttributes="Bold" />
+                        <Label Grid.Row="1" 
+                              Text="{Binding physicians.name, StringFormat='Physician: {0}'}"
+                              FontSize="Small" />
+                        <Label Grid.Row="2" 
+                              Text="{Binding hour, StringFormat='Time: {0:MMM dd, yyyy h:mm tt}'}" 
+                              FontSize="Small" 
+                              TextColor="Gray" />
+                    </Grid>
+                </Frame>
+            </DataTemplate>
+        </CollectionView.ItemTemplate>
+    </CollectionView>
+    
+</ContentPage>

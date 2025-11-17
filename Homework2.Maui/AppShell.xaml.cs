@@ -1,6 +1,6 @@
 ﻿namespace Homework2.Maui;
 
-using Homework2.Maui.Views; // Add this
+using Homework2.Maui.Views;
 
 public partial class AppShell : Shell
 {
@@ -10,10 +10,7 @@ public partial class AppShell : Shell
 
         // Register routes for pages we need to navigate to
         Routing.RegisterRoute(nameof(PatientDetailPage), typeof(PatientDetailPage));
-        
-        // --- ADD OR UNCOMMENT THIS LINE ---
         Routing.RegisterRoute(nameof(PhysicianDetailPage), typeof(PhysicianDetailPage));
-        
-        // Routing.RegisterRoute(nameof(AppointmentDetailPage), typeof(AppointmentDetailPage));
+        Routing.RegisterRoute(nameof(AppointmentDetailPage), typeof(AppointmentDetailPage));
     }
 }

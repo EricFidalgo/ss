@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
+             xmlns:sys="clr-namespace:System;assembly=mscorlib"
+             x:Class="Homework2.Maui.Views.AppointmentDetailPage"
+             Title="Appointment Details">
+    
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="15">
+            
+            <Label Text="Select Patient" FontSize="Medium" FontAttributes="Bold" />
+            <Picker x:Name="PatientPicker" 
+                    Title="Choose a patient"
+                    ItemDisplayBinding="{Binding name}"
+                    SelectedIndexChanged="OnPatientChanged" />
+
+            <Label Text="Select Date" FontSize="Medium" FontAttributes="Bold" Margin="0,10,0,0" />
+            <DatePicker x:Name="AppointmentDatePicker" 
+                       DateSelected="OnDateSelected"
+                       MinimumDate="{x:Static sys:DateTime.Today}" />
+
+            <Label Text="Available Time Slots" FontSize="Medium" FontAttributes="Bold" Margin="0,10,0,0" />
+            <CollectionView x:Name="TimeSlotsCollectionView"
+                           SelectionMode="Single"
+                           SelectionChanged="OnTimeSlotSelected"
+                           HeightRequest="200">
+                <CollectionView.ItemTemplate>
+                    <DataTemplate x:DataType="sys:DateTime">
+                        <Frame Padding="10" Margin="5" BorderColor="LightGray">
+                            <Label Text="{Binding ., StringFormat='{0:h:mm tt}'}" 
+                                  FontSize="Medium"
+                                  HorizontalOptions="Center" />
+                        </Frame>
+                    </DataTemplate>
+                </CollectionView.ItemTemplate>
+            </CollectionView>
+
+            <Label x:Name="SelectedTimeLabel" 
+                  Text="No time selected" 
+                  FontSize="Medium" 
+                  HorizontalOptions="Center"
+                  Margin="0,10,0,0" />
+
+            <Label Text="Available Physicians" FontSize="Medium" FontAttributes="Bold" Margin="0,10,0,0" />
+            <Picker x:Name="PhysicianPicker" 
+                    Title="Choose a physician"
+                    ItemDisplayBinding="{Binding name}" />
+
+            <Button Text="Save Appointment" 
+                    Clicked="OnSaveClicked"
+                    Margin="0,20,0,0" />
+            
+            <Button x:Name="DeleteButton"
+                    Text="Delete Appointment" 
+                    Clicked="OnDeleteClicked"
+                    IsVisible="False"
+                    BackgroundColor="Red" />
+        </VerticalStackLayout>
+    </ScrollView>
+    
+</ContentPage>

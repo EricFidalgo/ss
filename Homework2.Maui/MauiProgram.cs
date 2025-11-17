@@ -26,6 +26,9 @@ public static class MauiProgram
         builder.Services.AddTransient<PhysicianListPage>();
         builder.Services.AddTransient<PhysicianDetailPage>();
 
+        builder.Services.AddTransient<AppointmentListPage>();
+        builder.Services.AddTransient<AppointmentDetailPage>();
+
         return builder.Build();
     }
 }

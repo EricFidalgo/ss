@@ -4,91 +4,83 @@ using System.Linq;
 
 namespace Homework2.Maui.Views;
 
-// This attribute tells the navigation system what "id" means
 [QueryProperty(nameof(PhysicianId), "id")]
 public partial class PhysicianDetailPage : ContentPage
 {
     private readonly MedicalDataService _medicalDataService;
     private Physician _currentPhysician;
 
-    // This property will be set by the navigation system
-    public string PhysicianId { set
+    public string PhysicianId
     {
-        if (string.IsNullOrEmpty(value))
+        set
         {
-            // It's a new physician
-            Title = "Add Physician";
-            _currentPhysician = new Physician();
-            DeleteButton.IsVisible = false; // Hide delete button for new physician
-        }
-        else
-        {
-            // It's an existing physician
-            int physicianId = Convert.ToInt32(value);
-            _currentPhysician = _medicalDataService.GetPhysician(physicianId);
-            
-            if (_currentPhysician == null)
+            if (string.IsNullOrEmpty(value))
             {
-                // Fallback in case of bad ID
                 Title = "Add Physician";
                 _currentPhysician = new Physician();
                 DeleteButton.IsVisible = false;
             }
             else
             {
-                // Fill the form with existing data
-                Title = "Edit Physician";
-                NameEntry.Text = _currentPhysician.name;
-                LicenseEntry.Text = _currentPhysician.license_number;
-                GraduationPicker.Date = _currentPhysician.graduation;
-                SpecializationsEntry.Text = string.Join(", ", _currentPhysician.specializations);
-                DeleteButton.IsVisible = true;
+                int physicianId = Convert.ToInt32(value);
+                var physician = _medicalDataService.GetPhysician(physicianId);
+
+                if (physician == null)
+                {
+                    Title = "Add Physician";
+                    _currentPhysician = new Physician();
+                    DeleteButton.IsVisible = false;
+                }
+                else
+                {
+                    _currentPhysician = physician;
+                    Title = "Edit Physician";
+                    NameEntry.Text = _currentPhysician.name;
+                    LicenseEntry.Text = _currentPhysician.license_number;
+                    GraduationPicker.Date = _currentPhysician.graduation;
+                    SpecializationsEntry.Text = string.Join(", ", _currentPhysician.specializations);
+                    DeleteButton.IsVisible = true;
+                }
             }
         }
-    }}
+    }
 
     public PhysicianDetailPage(MedicalDataService medicalDataService)
     {
         InitializeComponent();
         _medicalDataService = medicalDataService;
 
-        // Set default state in case PhysicianId is set before constructor
-        if (_currentPhysician == null)
-        {
-             Title = "Add Physician";
-            _currentPhysician = new Physician();
-            DeleteButton.IsVisible = false;
-        }
+        // Initialize with a new physician by default
+        _currentPhysician = new Physician();
+        Title = "Add Physician";
+        DeleteButton.IsVisible = false;
     }
 
-    private async void OnSaveClicked(object sender, EventArgs e)
+    private async void OnSaveClicked(object? sender, EventArgs e)
     {
-        // Update the physician object from the form fields
         _currentPhysician.name = NameEntry.Text;
         _currentPhysician.license_number = LicenseEntry.Text;
         _currentPhysician.graduation = GraduationPicker.Date;
-        
-        // Convert comma-separated string back to a list
+
         _currentPhysician.specializations = SpecializationsEntry.Text
             .Split(',')
             .Select(s => s.Trim())
             .Where(s => !string.IsNullOrEmpty(s))
             .ToList();
 
-        if (_currentPhysician.Id == null) // New physician
+        if (_currentPhysician.Id == null)
         {
             _medicalDataService.AddPhysician(_currentPhysician);
         }
-        else // Existing physician
+        else
         {
             _medicalDataService.UpdatePhysician(_currentPhysician);
         }
 
-        // Go back to the previous page (the list)
         await Shell.Current.GoToAsync("..");
     }
 
-    private async void OnDeleteClicked(object sender, EventArgs e)
+    private async void OnDeleteClicked(object? sender, EventArgs e)
     {
         if (_currentPhysician.Id == null) return;
 
