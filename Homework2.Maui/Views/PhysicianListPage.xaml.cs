@@ -32,6 +32,9 @@ public partial class PhysicianListPage : ContentPage
         {
             _physicians.Add(physician);
         }
+        
+        // Update the count label
+        PhysicianCountLabel.Text = $"{_physicians.Count} physician{(_physicians.Count != 1 ? "s" : "")} registered";
     }
 
     private async void OnAddPhysicianClicked(object sender, EventArgs e)

@@ -3,24 +3,92 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:models="clr-namespace:Homework2.Maui.Models"
              x:Class="Homework2.Maui.Views.PhysicianListPage"
-             Title="Physicians">
+             Title="Physicians"
+             BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource OffBlack}}">
     
-    <Grid RowDefinitions="Auto, *">
-        <Button Grid.Row="0" 
-                Text="Add Physician" 
-                Clicked="OnAddPhysicianClicked"
-                Margin="10"/>
+    <ContentPage.ToolbarItems>
+        <ToolbarItem Text="Add Physician" 
+                     Clicked="OnAddPhysicianClicked"
+                     Order="Primary"
+                     Priority="0">
+            <ToolbarItem.IconImageSource>
+                <FontImageSource 
+                    Glyph="+" 
+                    FontFamily="OpenSansRegular"
+                    Color="{StaticResource Primary}"/>
+            </ToolbarItem.IconImageSource>
+        </ToolbarItem>
+    </ContentPage.ToolbarItems>
 
-        <CollectionView Grid.Row="1" 
+    <Grid RowDefinitions="Auto,*" Padding="10">
+        <!-- Header Section -->
+        <Frame Grid.Row="0" 
+               BackgroundColor="{StaticResource Primary}"
+               CornerRadius="10"
+               Padding="15"
+               Margin="0,0,0,10"
+               HasShadow="True">
+            <VerticalStackLayout Spacing="5">
+                <Label Text="Physician Management" 
+                       FontSize="20" 
+                       FontAttributes="Bold"
+                       TextColor="White"
+                       HorizontalOptions="Center"/>
+                <Label x:Name="PhysicianCountLabel"
+                       Text="0 physicians registered" 
+                       FontSize="14"
+                       TextColor="White"
+                       HorizontalOptions="Center"
+                       Opacity="0.9"/>
+            </VerticalStackLayout>
+        </Frame>
+
+        <!-- Physician List -->
+        <CollectionView Grid.Row="1"
                         x:Name="physiciansCollectionView"
                         SelectionMode="Single"
-                        SelectionChanged="OnPhysicianSelected">
+                        SelectionChanged="OnPhysicianSelected"
+                        EmptyView="No physicians found. Tap 'Add Physician' to create one.">
             <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="models:Physician">
-                    <VerticalStackLayout Padding="10">
-                        <Label Text="{Binding name}" FontSize="Medium" FontAttributes="Bold" />
-                        <Label Text="{Binding license_number}" FontSize="Small" />
-                    </VerticalStackLayout>
+                    <Frame Padding="15" 
+                           Margin="0,5,0,5" 
+                           BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+                           BorderColor="{StaticResource Gray200}"
+                           CornerRadius="10"
+                           HasShadow="True">
+                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
+                            <!-- Physician Name -->
+                            <Label Grid.Row="0" Grid.Column="0"
+                                   Text="{Binding name}" 
+                                   FontSize="18" 
+                                   FontAttributes="Bold"
+                                   TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"/>
+                            
+                            <!-- Chevron Icon -->
+                            <Label Grid.Row="0" Grid.Column="1" Grid.RowSpan="3"
+                                   Text="›"
+                                   FontSize="24"
+                                   TextColor="{StaticResource Gray400}"
+                                   VerticalOptions="Center"/>
+                            
+                            <!-- License Number -->
+                            <HorizontalStackLayout Grid.Row="1" Grid.Column="0" Spacing="5" Margin="0,5,0,0">
+                                <Label Text="🏥" FontSize="14"/>
+                                <Label Text="{Binding license_number, StringFormat='License: {0}'}" 
+                                       FontSize="14"
+                                       TextColor="{StaticResource Gray600}"/>
+                            </HorizontalStackLayout>
+                            
+                            <!-- Graduation Date -->
+                            <HorizontalStackLayout Grid.Row="2" Grid.Column="0" Spacing="5" Margin="0,5,0,0">
+                                <Label Text="🎓" FontSize="14"/>
+                                <Label Text="{Binding graduation, StringFormat='Graduated: {0:MMM yyyy}'}" 
+                                       FontSize="14"
+                                       TextColor="{StaticResource Gray600}"/>
+                            </HorizontalStackLayout>
+                        </Grid>
+                    </Frame>
                 </DataTemplate>
             </CollectionView.ItemTemplate>
         </CollectionView>

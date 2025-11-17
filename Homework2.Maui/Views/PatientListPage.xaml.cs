@@ -31,6 +31,9 @@ public partial class PatientListPage : ContentPage
         {
             _patients.Add(patient);
         }
+        
+        // Update the count label
+        PatientCountLabel.Text = $"{_patients.Count} patient{(_patients.Count != 1 ? "s" : "")} registered";
     }
 
     private async void OnAddPatientClicked(object sender, EventArgs e)

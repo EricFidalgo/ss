@@ -3,34 +3,124 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:models="clr-namespace:Homework2.Maui.Models"
              x:Class="Homework2.Maui.Views.AppointmentListPage"
-             Title="Appointments">
+             Title="Appointments"
+             BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource OffBlack}}">
     
     <ContentPage.ToolbarItems>
-        <ToolbarItem Text="Add" Clicked="OnAddAppointmentClicked" />
+        <ToolbarItem Text="Add Appointment" 
+                     Clicked="OnAddAppointmentClicked"
+                     Order="Primary"
+                     Priority="0">
+            <ToolbarItem.IconImageSource>
+                <FontImageSource 
+                    Glyph="+" 
+                    FontFamily="OpenSansRegular"
+                    Color="{StaticResource Primary}"/>
+            </ToolbarItem.IconImageSource>
+        </ToolbarItem>
     </ContentPage.ToolbarItems>
 
-    <CollectionView x:Name="appointmentsCollectionView"
-                    SelectionMode="Single"
-                    SelectionChanged="OnAppointmentSelected">
-        <CollectionView.ItemTemplate>
-            <DataTemplate x:DataType="models:Appointment">
-                <Frame Padding="10" Margin="5,5,5,0" BorderColor="LightGray">
-                    <Grid RowDefinitions="Auto,Auto,Auto" ColumnDefinitions="*">
-                        <Label Grid.Row="0" 
-                              Text="{Binding patients.name, StringFormat='Patient: {0}'}" 
-                              FontSize="Medium" 
-                              FontAttributes="Bold" />
-                        <Label Grid.Row="1" 
-                              Text="{Binding physicians.name, StringFormat='Physician: {0}'}"
-                              FontSize="Small" />
-                        <Label Grid.Row="2" 
-                              Text="{Binding hour, StringFormat='Time: {0:MMM dd, yyyy h:mm tt}'}" 
-                              FontSize="Small" 
-                              TextColor="Gray" />
-                    </Grid>
-                </Frame>
-            </DataTemplate>
-        </CollectionView.ItemTemplate>
-    </CollectionView>
+    <Grid RowDefinitions="Auto,*" Padding="10">
+        <!-- Header Section -->
+        <Frame Grid.Row="0" 
+               BackgroundColor="{StaticResource Primary}"
+               CornerRadius="10"
+               Padding="15"
+               Margin="0,0,0,10"
+               HasShadow="True">
+            <VerticalStackLayout Spacing="5">
+                <Label Text="Appointment Management" 
+                       FontSize="20" 
+                       FontAttributes="Bold"
+                       TextColor="White"
+                       HorizontalOptions="Center"/>
+                <Label x:Name="AppointmentCountLabel"
+                       Text="0 appointments scheduled" 
+                       FontSize="14"
+                       TextColor="White"
+                       HorizontalOptions="Center"
+                       Opacity="0.9"/>
+            </VerticalStackLayout>
+        </Frame>
+
+        <!-- Appointment List -->
+        <CollectionView Grid.Row="1"
+                        x:Name="appointmentsCollectionView"
+                        SelectionMode="Single"
+                        SelectionChanged="OnAppointmentSelected"
+                        EmptyView="No appointments scheduled. Tap 'Add Appointment' to create one.">
+            <CollectionView.ItemTemplate>
+                <DataTemplate x:DataType="models:Appointment">
+                    <Frame Padding="15" 
+                           Margin="0,5,0,5" 
+                           BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+                           BorderColor="{StaticResource Gray200}"
+                           CornerRadius="10"
+                           HasShadow="True">
+                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto,Auto">
+                            <!-- Date/Time Badge -->
+                            <Frame Grid.Row="0" Grid.Column="0"
+                                   BackgroundColor="{StaticResource Secondary}"
+                                   CornerRadius="5"
+                                   Padding="10,5"
+                                   HasShadow="False"
+                                   HorizontalOptions="Start"
+                                   Margin="0,0,0,10">
+                                <Label Text="{Binding hour, StringFormat='{0:MMM dd, yyyy - h:mm tt}'}" 
+                                       FontSize="12"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource Primary}"/>
+                            </Frame>
+                            
+                            <!-- Chevron Icon -->
+                            <Label Grid.Row="0" Grid.Column="1" Grid.RowSpan="4"
+                                   Text="›"
+                                   FontSize="24"
+                                   TextColor="{StaticResource Gray400}"
+                                   VerticalOptions="Center"/>
+                            
+                            <!-- Patient Name -->
+                            <HorizontalStackLayout Grid.Row="1" Grid.Column="0" Spacing="5">
+                                <Label Text="👤" FontSize="14"/>
+                                <Label Text="Patient:" 
+                                       FontSize="14"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource Gray600}"/>
+                                <Label Text="{Binding patients.name}" 
+                                       FontSize="14"
+                                       TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"/>
+                            </HorizontalStackLayout>
+                            
+                            <!-- Physician Name -->
+                            <HorizontalStackLayout Grid.Row="2" Grid.Column="0" Spacing="5" Margin="0,5,0,0">
+                                <Label Text="🩺" FontSize="14"/>
+                                <Label Text="Physician:" 
+                                       FontSize="14"
+                                       FontAttributes="Bold"
+                                       TextColor="{StaticResource Gray600}"/>
+                                <Label Text="{Binding physicians.name}" 
+                                       FontSize="14"
+                                       TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"/>
+                            </HorizontalStackLayout>
+                            
+                            <!-- Status Indicator -->
+                            <Frame Grid.Row="3" Grid.Column="0"
+                                   BackgroundColor="{StaticResource Primary}"
+                                   CornerRadius="10"
+                                   Padding="8,4"
+                                   HasShadow="False"
+                                   HorizontalOptions="Start"
+                                   Margin="0,10,0,0">
+                                <Label Text="Scheduled" 
+                                       FontSize="11"
+                                       TextColor="White"
+                                       FontAttributes="Bold"/>
+                            </Frame>
+                        </Grid>
+                    </Frame>
+                </DataTemplate>
+            </CollectionView.ItemTemplate>
+        </CollectionView>
+    </Grid>
     
 </ContentPage>

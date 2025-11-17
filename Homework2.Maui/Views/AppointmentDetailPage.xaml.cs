@@ -9,10 +9,9 @@ namespace Homework2.Maui.Views;
 public partial class AppointmentDetailPage : ContentPage
 {
     private readonly MedicalDataService _medicalDataService;
-    private Appointment _currentAppointment;
+    private Appointment? _currentAppointment;
     private DateTime _selectedTime;
     
-    // We store the selected objects in these variables now
     private Patient? _selectedPatient;
     private Physician? _selectedPhysician;
 
@@ -30,13 +29,25 @@ public partial class AppointmentDetailPage : ContentPage
             if (string.IsNullOrEmpty(value))
             {
                 Title = "New Appointment";
-                _currentAppointment = new Appointment();
+                _currentAppointment = null;
                 DeleteButton.IsVisible = false;
             }
             else
             {
-                Title = "Edit Appointment";
-                DeleteButton.IsVisible = true;
+                int appointmentId = Convert.ToInt32(value);
+                _currentAppointment = _medicalDataService.GetAppointment(appointmentId);
+                
+                if (_currentAppointment != null)
+                {
+                    Title = "Edit Appointment";
+                    DeleteButton.IsVisible = true;
+                    LoadExistingAppointment();
+                }
+                else
+                {
+                    Title = "New Appointment";
+                    DeleteButton.IsVisible = false;
+                }
             }
         }
     }
@@ -46,7 +57,7 @@ public partial class AppointmentDetailPage : ContentPage
         InitializeComponent();
         _medicalDataService = medicalDataService;
 
-        _currentAppointment = new Appointment();
+        _currentAppointment = null;
         Title = "New Appointment";
         DeleteButton.IsVisible = false;
 
@@ -68,7 +79,100 @@ public partial class AppointmentDetailPage : ContentPage
         _patients = _medicalDataService.GetPatients();
     }
 
-    // FIX: New method to handle Patient Button Click
+    private void LoadExistingAppointment()
+    {
+        if (_currentAppointment == null) return;
+
+        // Set the selected patient
+        _selectedPatient = _currentAppointment.patients;
+        if (_selectedPatient != null)
+        {
+            PatientSelectButton.Text = $"Patient: {_selectedPatient.name}";
+        }
+
+        // Set the date
+        AppointmentDatePicker.Date = _currentAppointment.hour.Date;
+
+        // Set the selected time
+        _selectedTime = _currentAppointment.hour;
+        SelectedTimeLabel.Text = $"Selected: {_selectedTime:h:mm tt}";
+
+        // Set the selected physician
+        _selectedPhysician = _currentAppointment.physicians;
+        if (_selectedPhysician != null)
+        {
+            PhysicianSelectButton.Text = $"Physician: {_selectedPhysician.name}";
+            PhysicianSelectButton.IsEnabled = true;
+        }
+
+        // Load available slots (for editing purposes)
+        UpdateAvailableSlotsForEdit();
+    }
+
+    private void UpdateAvailableSlotsForEdit()
+    {
+        if (_selectedPatient == null || _currentAppointment == null)
+        {
+            UpdateAvailableSlots();
+            return;
+        }
+
+        var selectedDate = AppointmentDatePicker.Date;
+        var physicians = _medicalDataService.GetPhysicians();
+        
+        // Temporarily remove the current appointment's time from unavailable hours
+        var currentTime = _currentAppointment.hour;
+        _selectedPatient.unavailable_hours.Remove(currentTime);
+        _currentAppointment.physicians?.unavailable_hours.Remove(currentTime);
+
+        _availableSlots = _medicalDataService.GetAvailableSlots(selectedDate, _selectedPatient, physicians);
+        
+        // Add the current time back if it's on the selected date
+        if (currentTime.Date == selectedDate.Date && !_availableSlots.Contains(currentTime))
+        {
+            _availableSlots.Add(currentTime);
+            _availableSlots = _availableSlots.OrderBy(t => t).ToList();
+        }
+        
+        TimeSlotsCollectionView.ItemsSource = _availableSlots;
+        
+        // Restore the unavailable hours
+        _selectedPatient.unavailable_hours.Add(currentTime);
+        _currentAppointment.physicians?.unavailable_hours.Add(currentTime);
+        
+        // Load available physicians for the selected time
+        if (_selectedTime != default)
+        {
+            LoadAvailablePhysiciansForEdit();
+        }
+    }
+
+    private void LoadAvailablePhysiciansForEdit()
+    {
+        if (_currentAppointment == null) return;
+
+        var currentTime = _currentAppointment.hour;
+        
+        // Temporarily remove current physician's unavailable hour
+        _currentAppointment.physicians?.unavailable_hours.Remove(currentTime);
+        
+        _availablePhysicians = _medicalDataService.GetAvailablePhysicians(_selectedTime);
+        
+        // Make sure current physician is in the list if the time hasn't changed
+        if (_selectedTime == currentTime && _currentAppointment.physicians != null)
+        {
+            if (!_availablePhysicians.Any(p => p?.Id == _currentAppointment.physicians.Id))
+            {
+                _availablePhysicians.Add(_currentAppointment.physicians);
+            }
+        }
+        
+        // Restore the unavailable hour
+        _currentAppointment.physicians?.unavailable_hours.Add(currentTime);
+        
+        PhysicianSelectButton.IsEnabled = _availablePhysicians.Any();
+    }
+
     private async void OnSelectPatientClicked(object sender, EventArgs e)
     {
         if (_patients == null || !_patients.Any())
@@ -77,22 +181,22 @@ public partial class AppointmentDetailPage : ContentPage
             return;
         }
 
-        // Create list of names for the popup
         var names = _patients.Select(p => p?.name ?? "Unknown").ToArray();
-
-        // Show the native Mac popup
         string action = await DisplayActionSheet("Choose a Patient", "Cancel", null, names);
 
         if (action != "Cancel" && action != null)
         {
-            // Find the patient object based on the name selected
             _selectedPatient = _patients.FirstOrDefault(p => p?.name == action);
-            
-            // Update the Button Text to show who was picked
             PatientSelectButton.Text = $"Patient: {_selectedPatient?.name}";
             
-            // Reset downstream selections
-            UpdateAvailableSlots();
+            if (_currentAppointment != null)
+            {
+                UpdateAvailableSlotsForEdit();
+            }
+            else
+            {
+                UpdateAvailableSlots();
+            }
         }
     }
 
@@ -105,7 +209,14 @@ public partial class AppointmentDetailPage : ContentPage
             return;
         }
 
-        UpdateAvailableSlots();
+        if (_currentAppointment != null)
+        {
+            UpdateAvailableSlotsForEdit();
+        }
+        else
+        {
+            UpdateAvailableSlots();
+        }
     }
 
     private void UpdateAvailableSlots()
@@ -113,7 +224,6 @@ public partial class AppointmentDetailPage : ContentPage
         _selectedTime = default;
         SelectedTimeLabel.Text = "No time selected";
         
-        // Reset Physician
         _selectedPhysician = null;
         PhysicianSelectButton.Text = "Tap to Choose Physician";
         PhysicianSelectButton.IsEnabled = false;
@@ -138,16 +248,21 @@ public partial class AppointmentDetailPage : ContentPage
             _selectedTime = selectedTime;
             SelectedTimeLabel.Text = $"Selected: {selectedTime:h:mm tt}";
 
-            _availablePhysicians = _medicalDataService.GetAvailablePhysicians(selectedTime);
+            if (_currentAppointment != null)
+            {
+                LoadAvailablePhysiciansForEdit();
+            }
+            else
+            {
+                _availablePhysicians = _medicalDataService.GetAvailablePhysicians(selectedTime);
+            }
             
-            // Enable the physician button now that we have a time
             PhysicianSelectButton.IsEnabled = true;
             PhysicianSelectButton.Text = "Tap to Choose Physician";
             _selectedPhysician = null;
         }
     }
 
-    // FIX: New method to handle Physician Button Click
     private async void OnSelectPhysicianClicked(object sender, EventArgs e)
     {
         if (_availablePhysicians == null || !_availablePhysicians.Any())
@@ -188,19 +303,51 @@ public partial class AppointmentDetailPage : ContentPage
 
         try
         {
-            _medicalDataService.CreateAppointment(_selectedPatient, _selectedPhysician, _selectedTime);
-            await DisplayAlert("Success", "Appointment created successfully", "OK");
+            if (_currentAppointment == null)
+            {
+                // Create new appointment
+                _medicalDataService.CreateAppointment(_selectedPatient, _selectedPhysician, _selectedTime);
+                await DisplayAlert("Success", "Appointment created successfully", "OK");
+            }
+            else
+            {
+                // Update existing appointment
+                _currentAppointment.patients = _selectedPatient;
+                _currentAppointment.physicians = _selectedPhysician;
+                _currentAppointment.hour = _selectedTime;
+                _medicalDataService.UpdateAppointment(_currentAppointment);
+                await DisplayAlert("Success", "Appointment updated successfully", "OK");
+            }
+            
             await Shell.Current.GoToAsync("..");
         }
         catch (Exception ex)
         {
-            await DisplayAlert("Error", $"Failed to create appointment: {ex.Message}", "OK");
+            await DisplayAlert("Error", $"Failed to save appointment: {ex.Message}", "OK");
         }
     }
 
     private async void OnDeleteClicked(object sender, EventArgs e)
     {
-        await DisplayAlert("Not Implemented", "Delete functionality coming soon", "OK");
+        if (_currentAppointment == null) return;
+
+        bool answer = await DisplayAlert("Confirm", 
+            "Are you sure you want to delete this appointment?", 
+            "Yes", "No");
+        
+        if (answer)
+        {
+            try
+            {
+                _medicalDataService.DeleteAppointment(_currentAppointment.Id);
+                await DisplayAlert("Success", "Appointment deleted successfully", "OK");
+                await Shell.Current.GoToAsync("..");
+            }
+            catch (Exception ex)
+            {
+                await DisplayAlert("Error", $"Failed to delete appointment: {ex.Message}", "OK");
+            }
+        }
     }
 
     private DateTime GetNextWeekday(DateTime date)

@@ -14,7 +14,6 @@ public partial class AppointmentListPage : ContentPage
         InitializeComponent();
         _medicalDataService = medicalDataService;
         
-        // Create the ObservableCollection and bind it ONCE in the constructor
         _appointments = new ObservableCollection<Appointment?>();
         appointmentsCollectionView.ItemsSource = _appointments;
     }
@@ -27,13 +26,14 @@ public partial class AppointmentListPage : ContentPage
 
     private void RefreshAppointmentList()
     {
-        // Clear and repopulate the ObservableCollection
         _appointments.Clear();
         var appointments = _medicalDataService.GetAppointments();
         foreach (var appointment in appointments)
         {
             _appointments.Add(appointment);
         }
+        
+        AppointmentCountLabel.Text = $"{_appointments.Count} appointment{(_appointments.Count != 1 ? "s" : "")} scheduled";
     }
 
     private async void OnAddAppointmentClicked(object sender, EventArgs e)
@@ -41,9 +41,12 @@ public partial class AppointmentListPage : ContentPage
         await Shell.Current.GoToAsync(nameof(AppointmentDetailPage));
     }
 
-    private void OnAppointmentSelected(object sender, SelectionChangedEventArgs e)
+    private async void OnAppointmentSelected(object sender, SelectionChangedEventArgs e)
     {
-        // Logic for editing an appointment can be added here later.
-        // For now, it does nothing.
+        if (e.CurrentSelection.FirstOrDefault() is Appointment appointment)
+        {
+            await Shell.Current.GoToAsync($"{nameof(AppointmentDetailPage)}?id={appointment.Id}");
+            appointmentsCollectionView.SelectedItem = null;
+        }
     }
 }

@@ -49,11 +49,24 @@ namespace Homework2.Maui.Services
             var patient = GetPatient(patientId);
             if (patient != null)
             {
+                // Cascade delete: Remove all appointments for this patient
+                var appointmentsToDelete = _appointments
+                    .Where(a => a?.patients?.Id == patientId)
+                    .ToList();
+                
+                foreach (var appointment in appointmentsToDelete)
+                {
+                    if (appointment != null)
+                    {
+                        DeleteAppointment(appointment.Id);
+                    }
+                }
+                
                 _patients.Remove(patient);
             }
         }
 
-        // --- Physician CRUD (Now implemented) ---
+        // --- Physician CRUD ---
         
         public List<Physician?> GetPhysicians() => _physicians;
         
@@ -75,7 +88,6 @@ namespace Homework2.Maui.Services
                 physician.license_number = updatedPhysician.license_number;
                 physician.graduation = updatedPhysician.graduation;
                 physician.specializations = updatedPhysician.specializations;
-                // Note: unavailable_hours is managed by appointments, not this form.
             }
         }
 
@@ -84,25 +96,39 @@ namespace Homework2.Maui.Services
             var physician = GetPhysician(physicianId);
             if (physician != null)
             {
+                // Cascade delete: Remove all appointments for this physician
+                var appointmentsToDelete = _appointments
+                    .Where(a => a?.physicians?.Id == physicianId)
+                    .ToList();
+                
+                foreach (var appointment in appointmentsToDelete)
+                {
+                    if (appointment != null)
+                    {
+                        DeleteAppointment(appointment.Id);
+                    }
+                }
+                
                 _physicians.Remove(physician);
             }
         }
 
 
-        // --- Appointment CRUD (You would add methods here) ---
+        // --- Appointment CRUD ---
+        
         public List<Appointment?> GetAppointments() => _appointments;
         
-        // This logic is now UI-friendly. The UI will call these methods.
+        public Appointment? GetAppointment(int id) => _appointments.FirstOrDefault(a => a?.Id == id);
+        
         public List<DateTime> GetAvailableSlots(DateTime date, Patient patient, List<Physician?> physicians)
         {
             var availableSlots = new List<DateTime>();
             if (date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday)
-                return availableSlots; // Empty list
+                return availableSlots;
 
             for (int hour = 8; hour <= 17; hour++)
             {
                 var time = date.Date.AddHours(hour);
-                // Check if patient is free AND at least one physician is free
                 if (!patient.unavailable_hours.Contains(time) && 
                     physicians.Any(ph => ph != null && !ph.unavailable_hours.Contains(time)))
                 {
@@ -134,6 +160,37 @@ namespace Homework2.Maui.Services
             return newAppointment;
         }
 
-        // ... UpdateAppointment, DeleteAppointment, etc.
+        public void UpdateAppointment(Appointment updatedAppointment)
+        {
+            var appointment = GetAppointment(updatedAppointment.Id);
+            if (appointment != null)
+            {
+                // Remove old unavailable hours
+                appointment.patients?.unavailable_hours.Remove(appointment.hour);
+                appointment.physicians?.unavailable_hours.Remove(appointment.hour);
+                
+                // Update the appointment
+                appointment.patients = updatedAppointment.patients;
+                appointment.physicians = updatedAppointment.physicians;
+                appointment.hour = updatedAppointment.hour;
+                
+                // Add new unavailable hours
+                appointment.patients?.unavailable_hours.Add(appointment.hour);
+                appointment.physicians?.unavailable_hours.Add(appointment.hour);
+            }
+        }
+
+        public void DeleteAppointment(int appointmentId)
+        {
+            var appointment = GetAppointment(appointmentId);
+            if (appointment != null)
+            {
+                // Free up the time slot for both patient and physician
+                appointment.patients?.unavailable_hours.Remove(appointment.hour);
+                appointment.physicians?.unavailable_hours.Remove(appointment.hour);
+                
+                _appointments.Remove(appointment);
+            }
+        }
     }
 }
