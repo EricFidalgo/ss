@@ -70,7 +70,7 @@
                            BorderColor="{StaticResource Gray200}"
                            CornerRadius="15"
                            HasShadow="True">
-                        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto" 
+                        <Grid RowDefinitions="Auto,Auto,Auto,Auto,Auto,Auto" 
                               ColumnDefinitions="Auto,*"
                               Padding="15"
                               RowSpacing="12"
@@ -101,20 +101,43 @@
                                 </VerticalStackLayout>
                             </Frame>
                             
-                            <!-- Appointment Time -->
-                            <Label Grid.Row="0" Grid.Column="1"
+                            <!-- VIEW MODE: Appointment Time -->
+                            <Label x:Name="TimeLabel"
+                                   Grid.Row="0" Grid.Column="1"
                                    Text="{Binding hour, StringFormat='{0:h:mm tt}'}" 
                                    FontSize="20" 
                                    FontAttributes="Bold"
                                    TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
                                    VerticalOptions="End"/>
                             
-                            <!-- Date Display -->
-                            <Label Grid.Row="1" Grid.Column="1"
+                            <!-- EDIT MODE: Time Picker Button -->
+                            <Button x:Name="TimeButton"
+                                    Grid.Row="0" Grid.Column="1"
+                                    Text="Select Time"
+                                    IsVisible="False"
+                                    Clicked="OnTimeButtonClicked"
+                                    FontSize="14"
+                                    Padding="8,5"
+                                    VerticalOptions="End"
+                                    HorizontalOptions="Start"
+                                    BackgroundColor="{StaticResource Primary}"
+                                    TextColor="White"/>
+                            
+                            <!-- VIEW MODE: Date Display -->
+                            <Label x:Name="DateLabel"
+                                   Grid.Row="1" Grid.Column="1"
                                    Text="{Binding hour, StringFormat='{0:dddd, MMMM dd, yyyy}'}" 
                                    FontSize="13"
                                    TextColor="{StaticResource Gray600}"
                                    VerticalOptions="Start"/>
+                            
+                            <!-- EDIT MODE: Date Picker -->
+                            <DatePicker x:Name="DatePicker"
+                                        Grid.Row="1" Grid.Column="1"
+                                        Date="{Binding hour}"
+                                        IsVisible="False"
+                                        FontSize="13"
+                                        VerticalOptions="Start"/>
                             
                             <!-- Divider -->
                             <BoxView Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="2"
@@ -147,10 +170,22 @@
                                            FontSize="11"
                                            TextColor="{StaticResource Gray500}"
                                            FontAttributes="Bold"/>
-                                    <Label Text="{Binding patients.name}" 
+                                    <!-- VIEW MODE -->
+                                    <Label x:Name="PatientLabel"
+                                           Text="{Binding patients.name}" 
                                            FontSize="15"
                                            FontAttributes="Bold"
                                            TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"/>
+                                    <!-- EDIT MODE -->
+                                    <Button x:Name="PatientButton"
+                                            Text="Select Patient"
+                                            IsVisible="False"
+                                            Clicked="OnPatientButtonClicked"
+                                            FontSize="13"
+                                            Padding="8,4"
+                                            HorizontalOptions="Start"
+                                            BackgroundColor="{StaticResource Primary}"
+                                            TextColor="White"/>
                                 </VerticalStackLayout>
                                 
                                 <!-- Physician Info -->
@@ -171,20 +206,42 @@
                                            FontSize="11"
                                            TextColor="{StaticResource Gray500}"
                                            FontAttributes="Bold"/>
-                                    <Label Text="{Binding physicians.name, StringFormat='Dr. {0}'}" 
+                                    <!-- VIEW MODE -->
+                                    <Label x:Name="PhysicianLabel"
+                                           Text="{Binding physicians.name, StringFormat='Dr. {0}'}" 
                                            FontSize="15"
                                            FontAttributes="Bold"
                                            TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"/>
+                                    <!-- EDIT MODE -->
+                                    <Button x:Name="PhysicianButton"
+                                            Text="Select Physician"
+                                            IsVisible="False"
+                                            Clicked="OnPhysicianButtonClicked"
+                                            FontSize="13"
+                                            Padding="8,4"
+                                            HorizontalOptions="Start"
+                                            BackgroundColor="{StaticResource Primary}"
+                                            TextColor="White"/>
                                 </VerticalStackLayout>
                             </Grid>
 
+                            <!-- Error Message (for edit mode validation) -->
+                            <Label x:Name="ErrorLabel"
+                                   Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2"
+                                   IsVisible="False"
+                                   Text=""
+                                   TextColor="Red"
+                                   FontSize="12"
+                                   HorizontalOptions="Center"/>
+
                             <!-- Inline Action Buttons -->
-                            <Grid Grid.Row="4" Grid.Column="0" Grid.ColumnSpan="2"
-                                  ColumnDefinitions="*,*"
+                            <Grid Grid.Row="5" Grid.Column="0" Grid.ColumnSpan="2"
+                                  ColumnDefinitions="*,*,*"
                                   ColumnSpacing="8"
                                   Margin="0,10,0,0">
-                                <Button Grid.Column="0"
-                                        Text="✏️ Edit"
+                                <Button x:Name="EditInlineButton"
+                                        Grid.Column="0"
+                                        Text="✏️ Edit Inline"
                                         Clicked="OnInlineEditClicked"
                                         CommandParameter="{Binding .}"
                                         FontSize="12"
@@ -193,6 +250,15 @@
                                         TextColor="White"
                                         CornerRadius="8"/>
                                 <Button Grid.Column="1"
+                                        Text="📝 Edit Dialog"
+                                        Clicked="OnDialogEditClicked"
+                                        CommandParameter="{Binding .}"
+                                        FontSize="12"
+                                        Padding="8,5"
+                                        BackgroundColor="{StaticResource Secondary}"
+                                        TextColor="{StaticResource Primary}"
+                                        CornerRadius="8"/>
+                                <Button Grid.Column="2"
                                         Text="🗑️ Delete"
                                         Clicked="OnInlineDeleteClicked"
                                         CommandParameter="{Binding .}"
