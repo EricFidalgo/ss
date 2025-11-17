@@ -41,7 +41,7 @@ public partial class AppointmentDetailPage : ContentPage
                 {
                     Title = "Edit Appointment";
                     DeleteButton.IsVisible = true;
-                    LoadExistingAppointment();
+                    // Load will happen in OnAppearing
                 }
                 else
                 {
@@ -72,6 +72,12 @@ public partial class AppointmentDetailPage : ContentPage
     {
         base.OnAppearing();
         LoadPatients();
+        
+        // Load existing appointment data if editing
+        if (_currentAppointment != null)
+        {
+            LoadExistingAppointment();
+        }
     }
 
     private void LoadPatients()
@@ -90,7 +96,7 @@ public partial class AppointmentDetailPage : ContentPage
             PatientSelectButton.Text = $"Patient: {_selectedPatient.name}";
         }
 
-        // Set the date
+        // Set the date (this will trigger OnDateSelected)
         AppointmentDatePicker.Date = _currentAppointment.hour.Date;
 
         // Set the selected time
@@ -105,72 +111,8 @@ public partial class AppointmentDetailPage : ContentPage
             PhysicianSelectButton.IsEnabled = true;
         }
 
-        // Load available slots (for editing purposes)
-        UpdateAvailableSlotsForEdit();
-    }
-
-    private void UpdateAvailableSlotsForEdit()
-    {
-        if (_selectedPatient == null || _currentAppointment == null)
-        {
-            UpdateAvailableSlots();
-            return;
-        }
-
-        var selectedDate = AppointmentDatePicker.Date;
-        var physicians = _medicalDataService.GetPhysicians();
-        
-        // Temporarily remove the current appointment's time from unavailable hours
-        var currentTime = _currentAppointment.hour;
-        _selectedPatient.unavailable_hours.Remove(currentTime);
-        _currentAppointment.physicians?.unavailable_hours.Remove(currentTime);
-
-        _availableSlots = _medicalDataService.GetAvailableSlots(selectedDate, _selectedPatient, physicians);
-        
-        // Add the current time back if it's on the selected date
-        if (currentTime.Date == selectedDate.Date && !_availableSlots.Contains(currentTime))
-        {
-            _availableSlots.Add(currentTime);
-            _availableSlots = _availableSlots.OrderBy(t => t).ToList();
-        }
-        
-        TimeSlotsCollectionView.ItemsSource = _availableSlots;
-        
-        // Restore the unavailable hours
-        _selectedPatient.unavailable_hours.Add(currentTime);
-        _currentAppointment.physicians?.unavailable_hours.Add(currentTime);
-        
-        // Load available physicians for the selected time
-        if (_selectedTime != default)
-        {
-            LoadAvailablePhysiciansForEdit();
-        }
-    }
-
-    private void LoadAvailablePhysiciansForEdit()
-    {
-        if (_currentAppointment == null) return;
-
-        var currentTime = _currentAppointment.hour;
-        
-        // Temporarily remove current physician's unavailable hour
-        _currentAppointment.physicians?.unavailable_hours.Remove(currentTime);
-        
-        _availablePhysicians = _medicalDataService.GetAvailablePhysicians(_selectedTime);
-        
-        // Make sure current physician is in the list if the time hasn't changed
-        if (_selectedTime == currentTime && _currentAppointment.physicians != null)
-        {
-            if (!_availablePhysicians.Any(p => p?.Id == _currentAppointment.physicians.Id))
-            {
-                _availablePhysicians.Add(_currentAppointment.physicians);
-            }
-        }
-        
-        // Restore the unavailable hour
-        _currentAppointment.physicians?.unavailable_hours.Add(currentTime);
-        
-        PhysicianSelectButton.IsEnabled = _availablePhysicians.Any();
+        // Update the UI with current data
+        UpdateAvailableSlots();
     }
 
     private async void OnSelectPatientClicked(object sender, EventArgs e)
@@ -189,14 +131,14 @@ public partial class AppointmentDetailPage : ContentPage
             _selectedPatient = _patients.FirstOrDefault(p => p?.name == action);
             PatientSelectButton.Text = $"Patient: {_selectedPatient?.name}";
             
-            if (_currentAppointment != null)
-            {
-                UpdateAvailableSlotsForEdit();
-            }
-            else
-            {
-                UpdateAvailableSlots();
-            }
+            // Reset time selection when patient changes
+            _selectedTime = default;
+            SelectedTimeLabel.Text = "No time selected";
+            _selectedPhysician = null;
+            PhysicianSelectButton.Text = "Tap to Choose Physician";
+            PhysicianSelectButton.IsEnabled = false;
+            
+            UpdateAvailableSlots();
         }
     }
 
@@ -209,25 +151,21 @@ public partial class AppointmentDetailPage : ContentPage
             return;
         }
 
-        if (_currentAppointment != null)
+        // When date changes, reset time and physician selection (unless loading existing)
+        if (_currentAppointment == null || e.NewDate.Date != _currentAppointment.hour.Date)
         {
-            UpdateAvailableSlotsForEdit();
+            _selectedTime = default;
+            SelectedTimeLabel.Text = "No time selected";
+            _selectedPhysician = null;
+            PhysicianSelectButton.Text = "Tap to Choose Physician";
+            PhysicianSelectButton.IsEnabled = false;
         }
-        else
-        {
-            UpdateAvailableSlots();
-        }
+
+        UpdateAvailableSlots();
     }
 
     private void UpdateAvailableSlots()
     {
-        _selectedTime = default;
-        SelectedTimeLabel.Text = "No time selected";
-        
-        _selectedPhysician = null;
-        PhysicianSelectButton.Text = "Tap to Choose Physician";
-        PhysicianSelectButton.IsEnabled = false;
-
         if (_selectedPatient == null)
         {
             TimeSlotsCollectionView.ItemsSource = null;
@@ -237,8 +175,18 @@ public partial class AppointmentDetailPage : ContentPage
         var selectedDate = AppointmentDatePicker.Date;
         var physicians = _medicalDataService.GetPhysicians();
         
-        _availableSlots = _medicalDataService.GetAvailableSlots(selectedDate, _selectedPatient, physicians);
+        // Pass the current appointment ID if editing, so it can be excluded from conflicts
+        int? excludeId = _currentAppointment?.Id;
+        _availableSlots = _medicalDataService.GetAvailableSlots(selectedDate, _selectedPatient, physicians, excludeId);
+        
         TimeSlotsCollectionView.ItemsSource = _availableSlots;
+        
+        // If we're editing and the current time is still valid, keep it selected
+        if (_currentAppointment != null && _availableSlots.Contains(_currentAppointment.hour))
+        {
+            // Find and select the current time in the collection view
+            TimeSlotsCollectionView.SelectedItem = _currentAppointment.hour;
+        }
     }
 
     private void OnTimeSlotSelected(object sender, SelectionChangedEventArgs e)
@@ -248,18 +196,29 @@ public partial class AppointmentDetailPage : ContentPage
             _selectedTime = selectedTime;
             SelectedTimeLabel.Text = $"Selected: {selectedTime:h:mm tt}";
 
-            if (_currentAppointment != null)
+            // Reset physician selection when time changes
+            _selectedPhysician = null;
+            PhysicianSelectButton.Text = "Tap to Choose Physician";
+            
+            // Get available physicians for this time slot
+            int? excludeId = _currentAppointment?.Id;
+            _availablePhysicians = _medicalDataService.GetAvailablePhysicians(selectedTime, excludeId);
+            
+            // If editing and the current physician is still available, keep them selected
+            if (_currentAppointment != null && 
+                _selectedTime == _currentAppointment.hour &&
+                _availablePhysicians.Any(p => p?.Id == _currentAppointment.physicians?.Id))
             {
-                LoadAvailablePhysiciansForEdit();
-            }
-            else
-            {
-                _availablePhysicians = _medicalDataService.GetAvailablePhysicians(selectedTime);
+                _selectedPhysician = _currentAppointment.physicians;
+                PhysicianSelectButton.Text = $"Physician: {_selectedPhysician?.name}";
             }
             
-            PhysicianSelectButton.IsEnabled = true;
-            PhysicianSelectButton.Text = "Tap to Choose Physician";
-            _selectedPhysician = null;
+            PhysicianSelectButton.IsEnabled = _availablePhysicians.Any();
+            
+            if (!PhysicianSelectButton.IsEnabled)
+            {
+                PhysicianSelectButton.Text = "No physicians available";
+            }
         }
     }
 
@@ -312,10 +271,15 @@ public partial class AppointmentDetailPage : ContentPage
             else
             {
                 // Update existing appointment
-                _currentAppointment.patients = _selectedPatient;
-                _currentAppointment.physicians = _selectedPhysician;
-                _currentAppointment.hour = _selectedTime;
-                _medicalDataService.UpdateAppointment(_currentAppointment);
+                var updatedAppointment = new Appointment
+                {
+                    Id = _currentAppointment.Id,
+                    patients = _selectedPatient,
+                    physicians = _selectedPhysician,
+                    hour = _selectedTime
+                };
+                
+                _medicalDataService.UpdateAppointment(updatedAppointment);
                 await DisplayAlert("Success", "Appointment updated successfully", "OK");
             }
             

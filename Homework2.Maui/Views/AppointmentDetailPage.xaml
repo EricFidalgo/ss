@@ -3,66 +3,173 @@
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              xmlns:sys="clr-namespace:System;assembly=mscorlib"
              x:Class="Homework2.Maui.Views.AppointmentDetailPage"
-             Title="Appointment Details">
+             Title="Appointment Details"
+             BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource OffBlack}}">
     
     <ScrollView>
-        <VerticalStackLayout Padding="20" Spacing="15">
+        <VerticalStackLayout Padding="20" Spacing="20">
             
-            <Label Text="Select Patient" FontSize="Medium" FontAttributes="Bold" />
+            <!-- Header Icon -->
+            <Frame BackgroundColor="{StaticResource Primary}"
+                   CornerRadius="60"
+                   Padding="25"
+                   HasShadow="False"
+                   WidthRequest="120"
+                   HeightRequest="120"
+                   HorizontalOptions="Center">
+                <Label Text="📅" 
+                       FontSize="60"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center"/>
+            </Frame>
             
-            <Button x:Name="PatientSelectButton"
-                    Text="Tap to Choose Patient"
-                    Clicked="OnSelectPatientClicked"
-                    HorizontalOptions="Fill"
-                    BackgroundColor="#2D2D2D"
-                    TextColor="White" />
+            <!-- Patient Selection -->
+            <Frame Padding="15" 
+                   BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+                   BorderColor="{StaticResource Gray200}"
+                   CornerRadius="12">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="👤 Select Patient" 
+                           FontSize="13"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource Primary}"/>
+                    <Button x:Name="PatientSelectButton"
+                            Text="Tap to Choose Patient"
+                            Clicked="OnSelectPatientClicked"
+                            HorizontalOptions="Fill"
+                            BackgroundColor="{StaticResource Secondary}"
+                            TextColor="{StaticResource Primary}"
+                            FontSize="15"
+                            HeightRequest="50"
+                            CornerRadius="10"/>
+                </VerticalStackLayout>
+            </Frame>
             
-            <Label Text="Select Date" FontSize="Medium" FontAttributes="Bold" Margin="0,10,0,0" />
-            <DatePicker x:Name="AppointmentDatePicker" 
-                        DateSelected="OnDateSelected"
-                        MinimumDate="{x:Static sys:DateTime.Today}" />
+            <!-- Date Selection -->
+            <Frame Padding="15" 
+                   BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+                   BorderColor="{StaticResource Gray200}"
+                   CornerRadius="12">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="📅 Select Date" 
+                           FontSize="13"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource Primary}"/>
+                    <Label Text="Appointments available Monday-Friday" 
+                           FontSize="11"
+                           TextColor="{StaticResource Gray500}"/>
+                    <DatePicker x:Name="AppointmentDatePicker" 
+                                DateSelected="OnDateSelected"
+                                MinimumDate="{x:Static sys:DateTime.Today}"
+                                FontSize="16"
+                                Format="dddd, MMMM dd, yyyy"/>
+                </VerticalStackLayout>
+            </Frame>
 
-            <Label Text="Available Time Slots" FontSize="Medium" FontAttributes="Bold" Margin="0,10,0,0" />
-            <CollectionView x:Name="TimeSlotsCollectionView"
-                           SelectionMode="Single"
-                           SelectionChanged="OnTimeSlotSelected"
-                           HeightRequest="200">
-                <CollectionView.ItemTemplate>
-                    <DataTemplate x:DataType="sys:DateTime">
-                        <Frame Padding="10" Margin="5" BorderColor="LightGray">
-                            <Label Text="{Binding ., StringFormat='{0:h:mm tt}'}" 
-                                  FontSize="Medium"
-                                  HorizontalOptions="Center" />
-                        </Frame>
-                    </DataTemplate>
-                </CollectionView.ItemTemplate>
-            </CollectionView>
+            <!-- Time Slots -->
+            <Frame Padding="15" 
+                   BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+                   BorderColor="{StaticResource Gray200}"
+                   CornerRadius="12">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="🕐 Available Time Slots" 
+                           FontSize="13"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource Primary}"/>
+                    <Label Text="Select an available hour (8:00 AM - 5:00 PM)" 
+                           FontSize="11"
+                           TextColor="{StaticResource Gray500}"/>
+                    
+                    <CollectionView x:Name="TimeSlotsCollectionView"
+                                   SelectionMode="Single"
+                                   SelectionChanged="OnTimeSlotSelected"
+                                   HeightRequest="200">
+                        <CollectionView.ItemsLayout>
+                            <GridItemsLayout Orientation="Vertical" 
+                                           Span="3"
+                                           HorizontalItemSpacing="8"
+                                           VerticalItemSpacing="8"/>
+                        </CollectionView.ItemsLayout>
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate x:DataType="sys:DateTime">
+                                <Frame Padding="12" 
+                                       BackgroundColor="{StaticResource Primary}"
+                                       BorderColor="{StaticResource Primary}"
+                                       CornerRadius="10"
+                                       HasShadow="False">
+                                    <Label Text="{Binding ., StringFormat='{0:h:mm tt}'}" 
+                                          FontSize="13"
+                                          FontAttributes="Bold"
+                                          TextColor="White"
+                                          HorizontalOptions="Center"
+                                          VerticalOptions="Center"/>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                    
+                    <Frame BackgroundColor="{StaticResource Secondary}"
+                           Padding="12"
+                           CornerRadius="8"
+                           HasShadow="False">
+                        <Label x:Name="SelectedTimeLabel" 
+                              Text="No time selected" 
+                              FontSize="14"
+                              FontAttributes="Bold"
+                              TextColor="{StaticResource Primary}"
+                              HorizontalOptions="Center"/>
+                    </Frame>
+                </VerticalStackLayout>
+            </Frame>
 
-            <Label x:Name="SelectedTimeLabel" 
-                  Text="No time selected" 
-                  FontSize="Medium" 
-                  HorizontalOptions="Center"
-                  Margin="0,10,0,0" />
+            <!-- Physician Selection -->
+            <Frame Padding="15" 
+                   BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+                   BorderColor="{StaticResource Gray200}"
+                   CornerRadius="12">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="🩺 Select Physician" 
+                           FontSize="13"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource Primary}"/>
+                    <Label Text="Choose from physicians available at the selected time" 
+                           FontSize="11"
+                           TextColor="{StaticResource Gray500}"/>
+                    <Button x:Name="PhysicianSelectButton" 
+                            Text="Tap to Choose Physician"
+                            Clicked="OnSelectPhysicianClicked"
+                            HorizontalOptions="Fill"
+                            BackgroundColor="{StaticResource Secondary}"
+                            TextColor="{StaticResource Primary}"
+                            FontSize="15"
+                            HeightRequest="50"
+                            CornerRadius="10"
+                            IsEnabled="False"/>
+                </VerticalStackLayout>
+            </Frame>
 
-            <Label Text="Available Physicians" FontSize="Medium" FontAttributes="Bold" Margin="0,10,0,0" />
-            
-            <Button x:Name="PhysicianSelectButton" 
-                    Text="Tap to Choose Physician"
-                    Clicked="OnSelectPhysicianClicked"
-                    HorizontalOptions="Fill"
-                    BackgroundColor="#2D2D2D"
-                    TextColor="White"
-                    IsEnabled="False"/>
-
-            <Button Text="Save Appointment" 
-                    Clicked="OnSaveClicked"
-                    Margin="0,20,0,0" />
-            
-            <Button x:Name="DeleteButton"
-                    Text="Delete Appointment" 
-                    Clicked="OnDeleteClicked"
-                    IsVisible="False"
-                    BackgroundColor="Red" />
+            <!-- Action Buttons -->
+            <VerticalStackLayout Spacing="12" Margin="0,10,0,20">
+                <Button Text="💾 Save Appointment" 
+                        Clicked="OnSaveClicked"
+                        BackgroundColor="{StaticResource Primary}"
+                        TextColor="White"
+                        FontSize="16"
+                        FontAttributes="Bold"
+                        HeightRequest="50"
+                        CornerRadius="12"/>
+                
+                <Button x:Name="DeleteButton"
+                        Text="🗑️ Delete Appointment" 
+                        Clicked="OnDeleteClicked"
+                        IsVisible="False"
+                        BackgroundColor="#DC3545"
+                        TextColor="White"
+                        FontSize="16"
+                        FontAttributes="Bold"
+                        HeightRequest="50"
+                        CornerRadius="12"/>
+            </VerticalStackLayout>
         </VerticalStackLayout>
     </ScrollView>
     

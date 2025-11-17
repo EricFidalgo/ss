@@ -5,25 +5,116 @@
     xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
     xmlns:views="clr-namespace:Homework2.Maui.Views"
     Shell.FlyoutBehavior="Flyout"
-    Title="Medical Records">
+    Title="Medical Records"
+    Shell.BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource OffBlack}}"
+    Shell.ForegroundColor="{StaticResource Primary}"
+    Shell.TitleColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}">
 
-    <!-- Flyout Menu Items -->
-    <FlyoutItem Title="Patients" Icon="{OnPlatform Default='dotnet_bot.png'}">
+    <!-- Flyout Header -->
+    <Shell.FlyoutHeader>
+        <Grid BackgroundColor="{StaticResource Primary}" 
+              Padding="20"
+              HeightRequest="150">
+            <VerticalStackLayout VerticalOptions="Center" Spacing="10">
+                <Label Text="🏥" 
+                       FontSize="48"
+                       HorizontalOptions="Center"/>
+                <Label Text="Medical Records System" 
+                       FontSize="20" 
+                       FontAttributes="Bold"
+                       TextColor="White"
+                       HorizontalOptions="Center"/>
+                <Label Text="Manage Patients, Physicians &amp; Appointments" 
+                       FontSize="13"
+                       TextColor="White"
+                       Opacity="0.9"
+                       HorizontalOptions="Center"/>
+            </VerticalStackLayout>
+        </Grid>
+    </Shell.FlyoutHeader>
+
+    <!-- Flyout Menu Items with Custom Icons -->
+    <FlyoutItem Title="Patients" Route="PatientListPage">
+        <FlyoutItem.Icon>
+            <FontImageSource 
+                Glyph="👥"
+                FontFamily="OpenSansRegular"
+                Size="24"
+                Color="{StaticResource Primary}"/>
+        </FlyoutItem.Icon>
         <ShellContent
             ContentTemplate="{DataTemplate views:PatientListPage}"
             Route="PatientListPage" />
     </FlyoutItem>
     
-    <FlyoutItem Title="Physicians" Icon="{OnPlatform Default='dotnet_bot.png'}">
+    <FlyoutItem Title="Physicians" Route="PhysicianListPage">
+        <FlyoutItem.Icon>
+            <FontImageSource 
+                Glyph="🩺"
+                FontFamily="OpenSansRegular"
+                Size="24"
+                Color="{StaticResource Primary}"/>
+        </FlyoutItem.Icon>
         <ShellContent
             ContentTemplate="{DataTemplate views:PhysicianListPage}"
             Route="PhysicianListPage" />
     </FlyoutItem>
 
-    <FlyoutItem Title="Appointments" Icon="{OnPlatform Default='dotnet_bot.png'}">
+    <FlyoutItem Title="Appointments" Route="AppointmentListPage">
+        <FlyoutItem.Icon>
+            <FontImageSource 
+                Glyph="📅"
+                FontFamily="OpenSansRegular"
+                Size="24"
+                Color="{StaticResource Primary}"/>
+        </FlyoutItem.Icon>
         <ShellContent
             ContentTemplate="{DataTemplate views:AppointmentListPage}"
             Route="AppointmentListPage" />
     </FlyoutItem>
+
+    <!-- Flyout Footer -->
+    <Shell.FlyoutFooter>
+        <Frame BackgroundColor="{StaticResource Gray100}"
+               Padding="15"
+               Margin="10"
+               CornerRadius="10">
+            <VerticalStackLayout Spacing="5">
+                <Label Text="💡 Quick Tips" 
+                       FontSize="14"
+                       FontAttributes="Bold"
+                       TextColor="{StaticResource Primary}"/>
+                <Label Text="• Tap any item to edit details" 
+                       FontSize="12"
+                       TextColor="{StaticResource Gray600}"/>
+                <Label Text="• Use + button to add new entries" 
+                       FontSize="12"
+                       TextColor="{StaticResource Gray600}"/>
+                <Label Text="• Appointments auto-delete when patient/physician is removed" 
+                       FontSize="12"
+                       TextColor="{StaticResource Gray600}"/>
+            </VerticalStackLayout>
+        </Frame>
+    </Shell.FlyoutFooter>
+
+    <!-- Custom Flyout Item Style -->
+    <Shell.ItemTemplate>
+        <DataTemplate>
+            <Grid ColumnDefinitions="Auto,*" 
+                  Padding="15,10"
+                  ColumnSpacing="15">
+                <Image Grid.Column="0" 
+                       Source="{Binding FlyoutIcon}"
+                       WidthRequest="32"
+                       HeightRequest="32"/>
+                <Label Grid.Column="1"
+                       Text="{Binding Title}"
+                       FontSize="16"
+                       FontAttributes="Bold"
+                       TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
+                       VerticalOptions="Center"/>
+            </Grid>
+        </DataTemplate>
+    </Shell.ItemTemplate>
 
 </Shell>

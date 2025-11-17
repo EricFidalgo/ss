@@ -2,26 +2,130 @@
 <ContentPage xmlns="http://schemas.microsoft.com/dotnet/2021/maui"
              xmlns:x="http://schemas.microsoft.com/winfx/2009/xaml"
              x:Class="Homework2.Maui.Views.PatientDetailPage"
-             Title="Patient Details">
+             Title="Patient Details"
+             BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource OffBlack}}">
     
-    <VerticalStackLayout Padding="20" Spacing="10">
-        <Label Text="Name" />
-        <Entry x:Name="NameEntry" Placeholder="Patient name" />
+    <ScrollView>
+        <VerticalStackLayout Padding="20" Spacing="20">
+            
+            <!-- Header Icon -->
+            <Frame BackgroundColor="{StaticResource Primary}"
+                   CornerRadius="60"
+                   Padding="25"
+                   HasShadow="False"
+                   WidthRequest="120"
+                   HeightRequest="120"
+                   HorizontalOptions="Center">
+                <Label Text="👤" 
+                       FontSize="60"
+                       HorizontalOptions="Center"
+                       VerticalOptions="Center"/>
+            </Frame>
+            
+            <!-- Name Section -->
+            <Frame Padding="15" 
+                   BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+                   BorderColor="{StaticResource Gray200}"
+                   CornerRadius="12">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="👤 Full Name" 
+                           FontSize="13"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource Primary}"/>
+                    <Entry x:Name="NameEntry" 
+                           Placeholder="Enter patient's full name"
+                           FontSize="16"/>
+                </VerticalStackLayout>
+            </Frame>
 
-        <Label Text="Address" />
-        <Entry x:Name="AddressEntry" Placeholder="Patient address" />
-        
-        <Label Text="Birthdate" />
-        <DatePicker x:Name="BirthdatePicker" />
+            <!-- Address Section -->
+            <Frame Padding="15" 
+                   BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+                   BorderColor="{StaticResource Gray200}"
+                   CornerRadius="12">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="📍 Address" 
+                           FontSize="13"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource Primary}"/>
+                    <Entry x:Name="AddressEntry" 
+                           Placeholder="Enter full address"
+                           FontSize="16"/>
+                </VerticalStackLayout>
+            </Frame>
+            
+            <!-- Birthdate Section -->
+            <Frame Padding="15" 
+                   BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+                   BorderColor="{StaticResource Gray200}"
+                   CornerRadius="12">
+                <VerticalStackLayout Spacing="8">
+                    <Label Text="🎂 Date of Birth" 
+                           FontSize="13"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource Primary}"/>
+                    <DatePicker x:Name="BirthdatePicker" 
+                                FontSize="16"
+                                Format="MMMM dd, yyyy"/>
+                </VerticalStackLayout>
+            </Frame>
 
-        <Label Text="Race" />
-        <Entry x:Name="RaceEntry" Placeholder="Patient race" />
-        
-        <Label Text="Gender" />
-        <Entry x:Name="GenderEntry" Placeholder="M/F" />
+            <!-- Demographics Section -->
+            <Frame Padding="15" 
+                   BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+                   BorderColor="{StaticResource Gray200}"
+                   CornerRadius="12">
+                <Grid RowDefinitions="Auto,Auto,Auto,Auto" 
+                      RowSpacing="15">
+                    <Label Grid.Row="0"
+                           Text="ℹ️ Demographics" 
+                           FontSize="13"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource Primary}"/>
+                    
+                    <VerticalStackLayout Grid.Row="1" Spacing="8">
+                        <Label Text="Race/Ethnicity" 
+                               FontSize="12"
+                               TextColor="{StaticResource Gray600}"/>
+                        <Entry x:Name="RaceEntry" 
+                               Placeholder="e.g., Caucasian, Hispanic, Asian"
+                               FontSize="16"/>
+                    </VerticalStackLayout>
+                    
+                    <VerticalStackLayout Grid.Row="2" Spacing="8">
+                        <Label Text="Gender" 
+                               FontSize="12"
+                               TextColor="{StaticResource Gray600}"/>
+                        <Entry x:Name="GenderEntry" 
+                               Placeholder="e.g., Male, Female, Other"
+                               FontSize="16"/>
+                    </VerticalStackLayout>
+                </Grid>
+            </Frame>
 
-        <Button Text="Save" Clicked="OnSaveClicked" />
-        <Button x:Name="DeleteButton" Text="Delete" Clicked="OnDeleteClicked" IsVisible="False" BackgroundColor="Red" />
-    </VerticalStackLayout>
+            <!-- Action Buttons -->
+            <VerticalStackLayout Spacing="12" Margin="0,10,0,20">
+                <Button Text="💾 Save Patient" 
+                        Clicked="OnSaveClicked"
+                        BackgroundColor="{StaticResource Primary}"
+                        TextColor="White"
+                        FontSize="16"
+                        FontAttributes="Bold"
+                        HeightRequest="50"
+                        CornerRadius="12"/>
+                
+                <Button x:Name="DeleteButton"
+                        Text="🗑️ Delete Patient" 
+                        Clicked="OnDeleteClicked"
+                        IsVisible="False"
+                        BackgroundColor="#DC3545"
+                        TextColor="White"
+                        FontSize="16"
+                        FontAttributes="Bold"
+                        HeightRequest="50"
+                        CornerRadius="12"/>
+            </VerticalStackLayout>
+        </VerticalStackLayout>
+    </ScrollView>
     
 </ContentPage>

@@ -20,27 +20,41 @@
         </ToolbarItem>
     </ContentPage.ToolbarItems>
 
-    <Grid RowDefinitions="Auto,*" Padding="10">
+    <Grid RowDefinitions="Auto,*" Padding="15">
         <!-- Header Section -->
         <Frame Grid.Row="0" 
                BackgroundColor="{StaticResource Primary}"
-               CornerRadius="10"
-               Padding="15"
-               Margin="0,0,0,10"
+               CornerRadius="15"
+               Padding="20"
+               Margin="0,0,0,15"
                HasShadow="True">
-            <VerticalStackLayout Spacing="5">
-                <Label Text="Physician Management" 
-                       FontSize="20" 
-                       FontAttributes="Bold"
-                       TextColor="White"
-                       HorizontalOptions="Center"/>
-                <Label x:Name="PhysicianCountLabel"
-                       Text="0 physicians registered" 
-                       FontSize="14"
-                       TextColor="White"
-                       HorizontalOptions="Center"
-                       Opacity="0.9"/>
-            </VerticalStackLayout>
+            <Grid ColumnDefinitions="Auto,*" ColumnSpacing="15">
+                <Frame Grid.Column="0"
+                       BackgroundColor="White"
+                       CornerRadius="30"
+                       Padding="15"
+                       HasShadow="False"
+                       WidthRequest="60"
+                       HeightRequest="60">
+                    <Label Text="🩺" 
+                           FontSize="30"
+                           HorizontalOptions="Center"
+                           VerticalOptions="Center"/>
+                </Frame>
+                <VerticalStackLayout Grid.Column="1" 
+                                   VerticalOptions="Center"
+                                   Spacing="5">
+                    <Label Text="Physician Management" 
+                           FontSize="22" 
+                           FontAttributes="Bold"
+                           TextColor="White"/>
+                    <Label x:Name="PhysicianCountLabel"
+                           Text="0 physicians registered" 
+                           FontSize="15"
+                           TextColor="White"
+                           Opacity="0.9"/>
+                </VerticalStackLayout>
+            </Grid>
         </Frame>
 
         <!-- Physician List -->
@@ -51,42 +65,148 @@
                         EmptyView="No physicians found. Tap 'Add Physician' to create one.">
             <CollectionView.ItemTemplate>
                 <DataTemplate x:DataType="models:Physician">
-                    <Frame Padding="15" 
-                           Margin="0,5,0,5" 
+                    <Frame Padding="0" 
+                           Margin="0,0,0,12" 
                            BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
                            BorderColor="{StaticResource Gray200}"
-                           CornerRadius="10"
+                           CornerRadius="15"
                            HasShadow="True">
-                        <Grid ColumnDefinitions="*,Auto" RowDefinitions="Auto,Auto,Auto">
+                        <Grid RowDefinitions="Auto,Auto,Auto,Auto" 
+                              ColumnDefinitions="Auto,*,Auto"
+                              Padding="15"
+                              RowSpacing="10"
+                              ColumnSpacing="12">
+                            
+                            <!-- Profile Icon -->
+                            <Frame Grid.Row="0" Grid.Column="0" Grid.RowSpan="2"
+                                   BackgroundColor="{StaticResource Secondary}"
+                                   CornerRadius="35"
+                                   Padding="15"
+                                   HasShadow="False"
+                                   WidthRequest="70"
+                                   HeightRequest="70"
+                                   VerticalOptions="Start">
+                                <Label Text="👨‍⚕️" 
+                                       FontSize="35"
+                                       HorizontalOptions="Center"
+                                       VerticalOptions="Center"/>
+                            </Frame>
+                            
                             <!-- Physician Name -->
-                            <Label Grid.Row="0" Grid.Column="0"
-                                   Text="{Binding name}" 
-                                   FontSize="18" 
+                            <Label Grid.Row="0" Grid.Column="1"
+                                   Text="{Binding name, StringFormat='Dr. {0}'}" 
+                                   FontSize="20" 
                                    FontAttributes="Bold"
-                                   TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"/>
+                                   TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"
+                                   VerticalOptions="End"/>
                             
                             <!-- Chevron Icon -->
-                            <Label Grid.Row="0" Grid.Column="1" Grid.RowSpan="3"
+                            <Label Grid.Row="0" Grid.Column="2" Grid.RowSpan="4"
                                    Text="›"
-                                   FontSize="24"
+                                   FontSize="32"
                                    TextColor="{StaticResource Gray400}"
                                    VerticalOptions="Center"/>
                             
-                            <!-- License Number -->
-                            <HorizontalStackLayout Grid.Row="1" Grid.Column="0" Spacing="5" Margin="0,5,0,0">
-                                <Label Text="🏥" FontSize="14"/>
-                                <Label Text="{Binding license_number, StringFormat='License: {0}'}" 
-                                       FontSize="14"
-                                       TextColor="{StaticResource Gray600}"/>
-                            </HorizontalStackLayout>
+                            <!-- Physician ID -->
+                            <Frame Grid.Row="1" Grid.Column="1"
+                                   BackgroundColor="{StaticResource Primary}"
+                                   CornerRadius="8"
+                                   Padding="8,4"
+                                   HasShadow="False"
+                                   HorizontalOptions="Start">
+                                <Label Text="{Binding Id, StringFormat='ID: {0}'}" 
+                                       FontSize="11"
+                                       FontAttributes="Bold"
+                                       TextColor="White"/>
+                            </Frame>
                             
-                            <!-- Graduation Date -->
-                            <HorizontalStackLayout Grid.Row="2" Grid.Column="0" Spacing="5" Margin="0,5,0,0">
-                                <Label Text="🎓" FontSize="14"/>
-                                <Label Text="{Binding graduation, StringFormat='Graduated: {0:MMM yyyy}'}" 
-                                       FontSize="14"
-                                       TextColor="{StaticResource Gray600}"/>
-                            </HorizontalStackLayout>
+                            <!-- Divider -->
+                            <BoxView Grid.Row="2" Grid.Column="0" Grid.ColumnSpan="3"
+                                     HeightRequest="1"
+                                     Color="{StaticResource Gray200}"
+                                     Margin="0,5,0,5"/>
+                            
+                            <!-- Info Grid -->
+                            <Grid Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2"
+                                  RowDefinitions="Auto,Auto,Auto"
+                                  ColumnDefinitions="Auto,*"
+                                  RowSpacing="8"
+                                  ColumnSpacing="10">
+                                
+                                <!-- License Number -->
+                                <Frame Grid.Row="0" Grid.Column="0"
+                                       BackgroundColor="{StaticResource Gray100}"
+                                       CornerRadius="20"
+                                       Padding="8"
+                                       HasShadow="False"
+                                       WidthRequest="36"
+                                       HeightRequest="36">
+                                    <Label Text="🏥" FontSize="16" 
+                                           HorizontalOptions="Center"
+                                           VerticalOptions="Center"/>
+                                </Frame>
+                                <VerticalStackLayout Grid.Row="0" Grid.Column="1" 
+                                                   VerticalOptions="Center">
+                                    <Label Text="License Number" 
+                                           FontSize="11"
+                                           TextColor="{StaticResource Gray500}"
+                                           FontAttributes="Bold"/>
+                                    <Label Text="{Binding license_number}" 
+                                           FontSize="14"
+                                           TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"/>
+                                </VerticalStackLayout>
+                                
+                                <!-- Graduation -->
+                                <Frame Grid.Row="1" Grid.Column="0"
+                                       BackgroundColor="{StaticResource Gray100}"
+                                       CornerRadius="20"
+                                       Padding="8"
+                                       HasShadow="False"
+                                       WidthRequest="36"
+                                       HeightRequest="36">
+                                    <Label Text="🎓" FontSize="16"
+                                           HorizontalOptions="Center"
+                                           VerticalOptions="Center"/>
+                                </Frame>
+                                <VerticalStackLayout Grid.Row="1" Grid.Column="1"
+                                                   VerticalOptions="Center">
+                                    <Label Text="Graduated" 
+                                           FontSize="11"
+                                           TextColor="{StaticResource Gray500}"
+                                           FontAttributes="Bold"/>
+                                    <Label Text="{Binding graduation, StringFormat='{0:MMMM yyyy}'}" 
+                                           FontSize="14"
+                                           TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}"/>
+                                </VerticalStackLayout>
+                                
+                                <!-- Specializations -->
+                                <Frame Grid.Row="2" Grid.Column="0"
+                                       BackgroundColor="{StaticResource Gray100}"
+                                       CornerRadius="20"
+                                       Padding="8"
+                                       HasShadow="False"
+                                       WidthRequest="36"
+                                       HeightRequest="36">
+                                    <Label Text="⭐" FontSize="16"
+                                           HorizontalOptions="Center"
+                                           VerticalOptions="Center"/>
+                                </Frame>
+                                <VerticalStackLayout Grid.Row="2" Grid.Column="1"
+                                                   VerticalOptions="Center">
+                                    <Label Text="Specializations" 
+                                           FontSize="11"
+                                           TextColor="{StaticResource Gray500}"
+                                           FontAttributes="Bold"/>
+                                    <Label FontSize="14"
+                                           TextColor="{AppThemeBinding Light={StaticResource Black}, Dark={StaticResource White}}">
+                                        <Label.FormattedText>
+                                            <FormattedString>
+                                                <Span Text="{Binding specializations, Converter={StaticResource ListToStringConverter}}" />
+                                            </FormattedString>
+                                        </Label.FormattedText>
+                                    </Label>
+                                </VerticalStackLayout>
+                            </Grid>
                         </Grid>
                     </Frame>
                 </DataTemplate>

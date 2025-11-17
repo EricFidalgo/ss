@@ -1,6 +1,7 @@
 using Homework2.Maui.Models;
 using Homework2.Maui.Services;
 using System.Collections.ObjectModel;
+using System.Linq;
 
 namespace Homework2.Maui.Views;
 
@@ -27,7 +28,12 @@ public partial class AppointmentListPage : ContentPage
     private void RefreshAppointmentList()
     {
         _appointments.Clear();
-        var appointments = _medicalDataService.GetAppointments();
+        
+        // Get appointments and sort by date/time
+        var appointments = _medicalDataService.GetAppointments()
+            .OrderBy(a => a?.hour)
+            .ToList();
+        
         foreach (var appointment in appointments)
         {
             _appointments.Add(appointment);

@@ -1,8 +1,27 @@
 using Homework2.Maui.Models;
 using Homework2.Maui.Services;
 using System.Collections.ObjectModel;
+using System.Globalization;
 
 namespace Homework2.Maui.Views;
+
+// Converter to display list of specializations
+public class ListToStringConverter : IValueConverter
+{
+    public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        if (value is List<string> list && list.Any())
+        {
+            return string.Join(", ", list);
+        }
+        return "No specializations";
+    }
+
+    public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+    {
+        throw new NotImplementedException();
+    }
+}
 
 public partial class PhysicianListPage : ContentPage
 {
@@ -13,6 +32,9 @@ public partial class PhysicianListPage : ContentPage
     {
         InitializeComponent();
         _medicalDataService = medicalDataService;
+        
+        // Add converter to resources
+        Resources.Add("ListToStringConverter", new ListToStringConverter());
         
         _physicians = new ObservableCollection<Physician?>();
         physiciansCollectionView.ItemsSource = _physicians;
@@ -33,7 +55,6 @@ public partial class PhysicianListPage : ContentPage
             _physicians.Add(physician);
         }
         
-        // Update the count label
         PhysicianCountLabel.Text = $"{_physicians.Count} physician{(_physicians.Count != 1 ? "s" : "")} registered";
     }
 
