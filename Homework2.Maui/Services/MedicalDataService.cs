@@ -53,10 +53,7 @@ namespace Homework2.Maui.Services
                 
                 foreach (var appointment in appointmentsToDelete)
                 {
-                    if (appointment != null)
-                    {
-                        DeleteAppointment(appointment.Id);
-                    }
+                    if (appointment != null) DeleteAppointment(appointment.Id);
                 }
                 
                 _patients.Remove(patient);
@@ -99,10 +96,7 @@ namespace Homework2.Maui.Services
                 
                 foreach (var appointment in appointmentsToDelete)
                 {
-                    if (appointment != null)
-                    {
-                        DeleteAppointment(appointment.Id);
-                    }
+                    if (appointment != null) DeleteAppointment(appointment.Id);
                 }
                 
                 _physicians.Remove(physician);
@@ -114,7 +108,24 @@ namespace Homework2.Maui.Services
         public List<Appointment?> GetAppointments() => _appointments;
         
         public Appointment? GetAppointment(int id) => _appointments.FirstOrDefault(a => a?.Id == id);
-        
+
+        // Helper to refresh the cache (kept for compatibility, though we use robust checks now)
+        private void RefreshAllAvailability()
+        {
+            foreach (var p in _patients) p?.unavailable_hours.Clear();
+            foreach (var p in _physicians) p?.unavailable_hours.Clear();
+
+            foreach (var appt in _appointments)
+            {
+                if (appt != null)
+                {
+                    appt.patients?.unavailable_hours.Add(appt.hour);
+                    appt.physicians?.unavailable_hours.Add(appt.hour);
+                }
+            }
+        }
+
+        // ROBUST: Check availability by scanning the actual appointment list for conflicts
         public List<DateTime> GetAvailableSlots(DateTime date, Patient patient, int? excludeAppointmentId = null)
         {
             var availableSlots = new List<DateTime>();
@@ -125,40 +136,29 @@ namespace Homework2.Maui.Services
             {
                 var timeSlot = new DateTime(date.Year, date.Month, date.Day, hour, 0, 0);
                 
-                // Check if this is the appointment being edited (should show as available)
-                bool isCurrentAppointment = false;
-                if (excludeAppointmentId.HasValue)
-                {
-                    var editingAppointment = GetAppointment(excludeAppointmentId.Value);
-                    if (editingAppointment != null && editingAppointment.hour == timeSlot)
-                    {
-                        isCurrentAppointment = true;
-                    }
-                }
-                
-                // Patient must be free at this exact time
-                bool patientAvailable = isCurrentAppointment || 
-                    !patient.unavailable_hours.Any(dt => 
-                        dt.Year == timeSlot.Year && 
-                        dt.Month == timeSlot.Month && 
-                        dt.Day == timeSlot.Day && 
-                        dt.Hour == timeSlot.Hour);
-                
-                // At least one physician must be free at this exact time
-                bool physicianAvailable = _physicians.Any(ph => 
-                {
+                // 1. Check if Patient is busy in ANY OTHER appointment
+                bool patientBusy = _appointments.Any(a => 
+                    a.Id != excludeAppointmentId && // Ignore the appointment we are currently editing
+                    a.patients?.Id == patient.Id && // Check for THIS patient
+                    a.hour == timeSlot              // Check for THIS time
+                );
+
+                // 2. Check if ANY Physician is free
+                bool anyPhysicianFree = _physicians.Any(ph => {
                     if (ph == null) return false;
                     
-                    bool isPhysicianBusy = ph.unavailable_hours.Any(dt => 
-                        dt.Year == timeSlot.Year && 
-                        dt.Month == timeSlot.Month && 
-                        dt.Day == timeSlot.Day && 
-                        dt.Hour == timeSlot.Hour);
+                    // Check if THIS physician is busy in ANY OTHER appointment
+                    bool physicianBusy = _appointments.Any(a =>
+                        a.Id != excludeAppointmentId &&
+                        a.physicians?.Id == ph.Id &&
+                        a.hour == timeSlot
+                    );
                     
-                    return !isPhysicianBusy || isCurrentAppointment;
+                    return !physicianBusy;
                 });
                 
-                if (patientAvailable && physicianAvailable)
+                // Only valid if Patient is free AND at least one Physician is free
+                if (!patientBusy && anyPhysicianFree)
                 {
                     availableSlots.Add(timeSlot);
                 }
@@ -173,45 +173,27 @@ namespace Homework2.Maui.Services
             {
                 if (ph == null) return false;
                 
-                // Check if this is the appointment being edited
-                bool isCurrentAppointment = false;
-                if (excludeAppointmentId.HasValue)
-                {
-                    var editingAppointment = GetAppointment(excludeAppointmentId.Value);
-                    if (editingAppointment != null && 
-                        editingAppointment.physicians?.Id == ph.Id && 
-                        editingAppointment.hour == timeSlot)
-                    {
-                        isCurrentAppointment = true;
-                    }
-                }
+                // Check if this physician is busy in ANY OTHER appointment
+                bool isBusy = _appointments.Any(a => 
+                    a.Id != excludeAppointmentId && // Ignore the appointment we are currently editing
+                    a.physicians?.Id == ph.Id &&
+                    a.hour == timeSlot
+                );
                 
-                // Check if physician is busy at this exact time
-                bool isBusy = ph.unavailable_hours.Any(dt => 
-                    dt.Year == timeSlot.Year && 
-                    dt.Month == timeSlot.Month && 
-                    dt.Day == timeSlot.Day && 
-                    dt.Hour == timeSlot.Hour);
-                
-                return !isBusy || isCurrentAppointment;
+                return !isBusy;
             }).ToList();
         }
 
         public bool IsPhysicianAvailable(Physician? physician, DateTime time)
         {
-            if (physician == null || time == default)
-            {
-                return false;
-            }
+            if (physician == null || time == default) return false;
 
-            // A physician is available if they don't have an appointment at the exact given time.
-            // This uses the unavailable_hours list which is managed when appointments are created/updated/deleted.
-            return !physician.unavailable_hours.Any(dt => dt == time);
+            // Robust check
+            return !_appointments.Any(a => a.physicians?.Id == physician.Id && a.hour == time);
         }
 
         public Appointment CreateAppointment(Patient patient, Physician physician, DateTime time)
         {
-            // Normalize the time to remove seconds and milliseconds
             var normalizedTime = new DateTime(time.Year, time.Month, time.Day, time.Hour, 0, 0);
             
             var newAppointment = new Appointment
@@ -222,9 +204,8 @@ namespace Homework2.Maui.Services
                 hour = normalizedTime
             };
 
-            patient.unavailable_hours.Add(normalizedTime);
-            physician.unavailable_hours.Add(normalizedTime);
             _appointments.Add(newAppointment);
+            RefreshAllAvailability(); // Update caches
 
             return newAppointment;
         }
@@ -234,7 +215,6 @@ namespace Homework2.Maui.Services
             var appointment = GetAppointment(updatedAppointment.Id);
             if (appointment != null)
             {
-                // Normalize the new time
                 var normalizedTime = new DateTime(
                     updatedAppointment.hour.Year, 
                     updatedAppointment.hour.Month, 
@@ -242,18 +222,11 @@ namespace Homework2.Maui.Services
                     updatedAppointment.hour.Hour, 
                     0, 0);
                 
-                // Remove old unavailable hours from OLD patient and physician
-                appointment.patients?.unavailable_hours.Remove(appointment.hour);
-                appointment.physicians?.unavailable_hours.Remove(appointment.hour);
-                
-                // Update the appointment with new data
                 appointment.patients = updatedAppointment.patients;
                 appointment.physicians = updatedAppointment.physicians;
                 appointment.hour = normalizedTime;
                 
-                // Add new unavailable hours to NEW patient and physician
-                appointment.patients?.unavailable_hours.Add(normalizedTime);
-                appointment.physicians?.unavailable_hours.Add(normalizedTime);
+                RefreshAllAvailability(); // Update caches
             }
         }
 
@@ -262,10 +235,8 @@ namespace Homework2.Maui.Services
             var appointment = GetAppointment(appointmentId);
             if (appointment != null)
             {
-                appointment.patients?.unavailable_hours.Remove(appointment.hour);
-                appointment.physicians?.unavailable_hours.Remove(appointment.hour);
-                
                 _appointments.Remove(appointment);
+                RefreshAllAvailability(); // Update caches
             }
         }
     }

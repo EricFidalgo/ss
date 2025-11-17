@@ -129,6 +129,7 @@
                             <DatePicker x:Name="DatePicker"
                                         Grid.Row="1" Grid.Column="1"
                                         Date="{Binding hour}"
+                                        DateSelected="OnDateSelected"
                                         IsVisible="{Binding IsEditing}"
                                         FontSize="13"
                                         VerticalOptions="Start"/>

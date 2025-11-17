@@ -46,12 +46,75 @@ public partial class AppointmentListPage : ContentPage
         await Shell.Current.GoToAsync(nameof(AppointmentDetailPage));
     }
 
-    // Handles the "Edit Dialog" button (Navigate to Detail Page)
-    private async void OnDialogEditClicked(object sender, EventArgs e)
+    private async void OnInlineEditClicked(object sender, EventArgs e)
     {
-        if (sender is VisualElement button && button.BindingContext is Appointment appointment)
+        if (sender is Button button && button.BindingContext is Appointment appointment)
         {
-            await Shell.Current.GoToAsync($"{nameof(AppointmentDetailPage)}?id={appointment.Id}");
+            if (appointment.IsEditing)
+            {
+                // --- VALIDATION ON SAVE ---
+
+                // 1. Check Date (Weekend)
+                if (appointment.hour.DayOfWeek == DayOfWeek.Saturday || appointment.hour.DayOfWeek == DayOfWeek.Sunday)
+                {
+                    await DisplayAlert("Error", "Appointments cannot be scheduled on weekends.", "OK");
+                    return;
+                }
+
+                // 2. Check Patient Availability
+                // We manually check because the Service doesn't have "IsPatientAvailable" public, 
+                // but we can check the list directly.
+                if (appointment.patients != null)
+                {
+                    bool isPatientBusy = appointment.patients.unavailable_hours.Any(dt => 
+                        dt == appointment.hour && 
+                        dt != appointment.hour // Wait, the patient HAS this hour in their list already because of THIS appointment.
+                        // To fix this logic, we should check if the time exists AND it belongs to a DIFFERENT appointment.
+                        // But since we don't have back-refs easily, we rely on the fact that "UpdateAppointment"
+                        // in the service handles the swap.
+                        // However, for VALIDATION, we must check if they are double-booked.
+                    );
+                    
+                    // Simpler check: Use the Service's GetAvailableSlots logic concepts
+                    // If the patient has this hour marked unavailable, AND it's not this exact appointment instance...
+                    // Since we are editing "in-place", the availability list might already contain this slot.
+                    // The only way to be sure is to check if they are available at the NEW time (if changed) 
+                    // or if we swapped patients.
+                }
+
+                // Let's use the Service methods to validate properly by asking "Is this valid?"
+                // The Service helper `GetAvailableSlots` includes the logic to "Ignore" the current appointment ID.
+                var validSlots = _medicalDataService.GetAvailableSlots(appointment.hour.Date, appointment.patients, appointment.Id);
+                if (!validSlots.Contains(appointment.hour))
+                {
+                     await DisplayAlert("Error", "The selected Patient is not available at this time.", "OK");
+                     return;
+                }
+
+                // 3. Check Physician Availability
+                var validPhysicians = _medicalDataService.GetAvailablePhysicians(appointment.hour, appointment.Id);
+                if (appointment.physicians != null && !validPhysicians.Any(p => p?.Id == appointment.physicians.Id))
+                {
+                    await DisplayAlert("Error", "The selected Physician is not available at this time.", "OK");
+                    return;
+                }
+
+                // --- SAVE ---
+                _medicalDataService.UpdateAppointment(appointment);
+                
+                // Switch back to View Mode
+                appointment.IsEditing = false;
+                button.Text = "✏️ Edit Inline";
+                button.BackgroundColor = (Color)Application.Current.Resources["Primary"]; 
+                RefreshAppointmentList(); // Refresh to re-sort if date changed
+            }
+            else
+            {
+                // START EDITING ACTION
+                appointment.IsEditing = true;
+                button.Text = "💾 Save";
+                button.BackgroundColor = Colors.Green;
+            }
         }
     }
 
@@ -68,104 +131,113 @@ public partial class AppointmentListPage : ContentPage
             }
         }
     }
-
-    private async void OnAppointmentSelected(object sender, SelectionChangedEventArgs e)
+    
+    private async void OnDialogEditClicked(object sender, EventArgs e)
     {
-        if (e.CurrentSelection.FirstOrDefault() is Appointment appointment)
+        if (sender is VisualElement button && button.BindingContext is Appointment appointment)
         {
             await Shell.Current.GoToAsync($"{nameof(AppointmentDetailPage)}?id={appointment.Id}");
-            appointmentsCollectionView.SelectedItem = null;
         }
     }
 
-    // --- Missing Event Handlers that caused the build error ---
+    // --- Smart Pickers ---
 
-    // 1. Handle the "Inline Edit" / "Save" toggle
-    private void OnInlineEditClicked(object sender, EventArgs e)
-    {
-        if (sender is Button button && button.BindingContext is Appointment appointment)
-        {
-            if (appointment.IsEditing)
-            {
-                // SAVE ACTION
-                _medicalDataService.UpdateAppointment(appointment);
-                
-                // Switch back to View Mode
-                appointment.IsEditing = false;
-                button.Text = "✏️ Edit Inline";
-                button.BackgroundColor = (Color)Application.Current.Resources["Primary"]; // Reset color
-            }
-            else
-            {
-                // START EDITING ACTION
-                appointment.IsEditing = true;
-                
-                // Change button to "Save"
-                button.Text = "💾 Save";
-                button.BackgroundColor = Colors.Green;
-            }
-        }
-    }
-
-    // 2. Handle Patient Selection (Action Sheet)
     private async void OnPatientButtonClicked(object sender, EventArgs e)
     {
         if (sender is VisualElement element && element.BindingContext is Appointment appointment)
         {
-            var patients = _medicalDataService.GetPatients();
-            var names = patients.Select(p => p.name).ToArray();
+            // Filter patients: Only show those available at the current appointment time
+            // (Passing appointment.Id allows the service to say "The current patient is available for this slot")
+            var allPatients = _medicalDataService.GetPatients();
+            
+            // We manually filter here because we want to see ALL valid patients for this specific time slot
+            var availablePatients = allPatients.Where(p => 
+            {
+                // If this is the patient currently assigned to this appointment, they are "available" (to keep it)
+                if (p.Id == appointment.patients?.Id) return true;
 
-            string selectedName = await DisplayActionSheet("Select Patient", "Cancel", null, names);
+                // Otherwise, check if they are free at this time
+                return !p.unavailable_hours.Contains(appointment.hour);
+            }).ToList();
+
+            if (!availablePatients.Any())
+            {
+                await DisplayAlert("Info", "No other patients available at this time.", "OK");
+                return;
+            }
+
+            var names = availablePatients.Select(p => p.name).ToArray();
+            string selectedName = await DisplayActionSheet("Select Patient (Available)", "Cancel", null, names);
 
             if (selectedName != "Cancel" && !string.IsNullOrEmpty(selectedName))
             {
-                appointment.patients = patients.FirstOrDefault(p => p.name == selectedName);
+                appointment.patients = availablePatients.FirstOrDefault(p => p.name == selectedName);
             }
         }
     }
 
-    // 3. Handle Physician Selection (Action Sheet)
     private async void OnPhysicianButtonClicked(object sender, EventArgs e)
     {
         if (sender is VisualElement element && element.BindingContext is Appointment appointment)
         {
-            var physicians = _medicalDataService.GetPhysicians();
-            // Optional: Filter by availability if you want strictly valid choices
-            // var available = physicians.Where(p => _medicalDataService.IsPhysicianAvailable(p, appointment.hour)).ToList();
+            // Use Service to get physicians available at this time (excluding current appointment lock)
+            var availablePhysicians = _medicalDataService.GetAvailablePhysicians(appointment.hour, appointment.Id);
 
-            var names = physicians.Select(p => "Dr. " + p.name).ToArray();
+            if (!availablePhysicians.Any())
+            {
+                await DisplayAlert("Info", "No physicians available at this time.", "OK");
+                return;
+            }
 
-            string selectedName = await DisplayActionSheet("Select Physician", "Cancel", null, names);
+            var names = availablePhysicians.Select(p => "Dr. " + p.name).ToArray();
+            string selectedName = await DisplayActionSheet("Select Physician (Available)", "Cancel", null, names);
 
             if (selectedName != "Cancel" && !string.IsNullOrEmpty(selectedName))
             {
-                // Strip "Dr. " prefix to find the object
                 string cleanName = selectedName.Replace("Dr. ", "");
-                appointment.physicians = physicians.FirstOrDefault(p => p.name == cleanName);
+                appointment.physicians = availablePhysicians.FirstOrDefault(p => p.name == cleanName);
             }
         }
     }
 
-    // 4. Handle Time Selection
     private async void OnTimeButtonClicked(object sender, EventArgs e)
     {
         if (sender is VisualElement element && element.BindingContext is Appointment appointment)
         {
-            // Simple approach: Ask for a time string or use a TimePicker. 
-            // Since Maui doesn't have a modal TimePicker easily callable from C#, 
-            // we can use a simple ActionSheet for slots or just assume the DatePicker covers the Date part.
+            // Use Service to get slots where BOTH the current patient and ANY physician are available
+            var slots = _medicalDataService.GetAvailableSlots(appointment.hour.Date, appointment.patients, appointment.Id);
             
-            // Let's use the available slots logic you used in the DetailPage
-            var slots = _medicalDataService.GetAvailableSlots(appointment.hour.Date, appointment.patients);
-            
+            if (!slots.Any())
+            {
+                await DisplayAlert("Info", "No other time slots available for this date.", "OK");
+                return;
+            }
+
             var timeStrings = slots.Select(t => t.ToString("h:mm tt")).ToArray();
-            
             string selectedTimeStr = await DisplayActionSheet("Select Time", "Cancel", null, timeStrings);
             
             if (selectedTimeStr != "Cancel" && DateTime.TryParse(selectedTimeStr, out DateTime selectedTime))
             {
                 // Combine the existing Date with the new Time
                 appointment.hour = appointment.hour.Date + selectedTime.TimeOfDay;
+            }
+        }
+    }
+
+    private void OnDateSelected(object sender, DateChangedEventArgs e)
+    {
+        if (sender is DatePicker picker && picker.BindingContext is Appointment appointment)
+        {
+            if (e.NewDate.DayOfWeek == DayOfWeek.Saturday || e.NewDate.DayOfWeek == DayOfWeek.Sunday)
+            {
+                DisplayAlert("Invalid Date", "Appointments cannot be scheduled on weekends. Please select a weekday.", "OK");
+                // Optional: Revert date or force to Monday?
+                // picker.Date = e.OldDate; // This might cause a loop if not careful, usually better to just warn and let user fix.
+            }
+            else
+            {
+                // Update the appointment hour (keep time, change date)
+                appointment.hour = e.NewDate.Date + appointment.hour.TimeOfDay;
             }
         }
     }
