@@ -2,6 +2,7 @@ using Homework2.Maui.Models;
 using Homework2.Maui.Services;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace Homework2.Maui.Views;
 
@@ -11,6 +12,9 @@ public partial class PatientListPage : ContentPage
     private ObservableCollection<Patient?> _patients;
     private List<Patient?> _allPatientsCache = new List<Patient?>();
     private int _currentSortIndex = -1;
+
+    // NEW: Dictionary to backup patient data for Cancel functionality
+    private Dictionary<int, Patient> _originalPatients = new Dictionary<int, Patient>();
 
     public PatientListPage(MedicalDataService medicalDataService)
     {
@@ -127,13 +131,8 @@ public partial class PatientListPage : ContentPage
     {
         if (sender is VisualElement button && button.BindingContext is Patient patient)
         {
-            // 1. Create the page instance manually (injecting the service)
             var detailPage = new PatientDetailPage(_medicalDataService);
-            
-            // 2. Manually trigger the data loading (since QueryProperty won't fire for Modals)
             detailPage.PatientId = patient.Id.ToString();
-
-            // 3. Push as a Modal (Dialog)
             await Navigation.PushModalAsync(detailPage);
         }
     }
@@ -151,6 +150,7 @@ public partial class PatientListPage : ContentPage
         }
     }
 
+    // UPDATED: Inline Edit Logic with Backup
     private void OnInlineEditClicked(object sender, EventArgs e)
     {
         if (sender is Button button && button.BindingContext is Patient patient)
@@ -158,23 +158,57 @@ public partial class PatientListPage : ContentPage
             if (patient.IsEditing)
             {
                 // SAVE ACTION
-                // Assuming you have an UpdatePatient method in your service
                 _medicalDataService.UpdatePatient(patient);
                 
-                // Switch back to View Mode
+                // Remove from backup since we successfully saved
+                if (patient.Id.HasValue) _originalPatients.Remove(patient.Id.Value);
+
+                // Switch back to View Mode (Button appearance handled by XAML Triggers)
                 patient.IsEditing = false;
-                button.Text = "✏️ Edit Inline";
-                button.BackgroundColor = (Color)Application.Current.Resources["Primary"]; 
             }
             else
             {
-                // START EDITING ACTION
-                patient.IsEditing = true;
+                // START EDITING ACTION - Create Backup
+                if (patient.Id.HasValue && !_originalPatients.ContainsKey(patient.Id.Value))
+                {
+                    var clone = new Patient
+                    {
+                        Id = patient.Id,
+                        name = patient.name,
+                        address = patient.address,
+                        birthdate = patient.birthdate,
+                        race = patient.race,
+                        gender = patient.gender
+                    };
+                    _originalPatients[patient.Id.Value] = clone;
+                }
                 
-                // Change button to "Save"
-                button.Text = "💾 Save";
-                button.BackgroundColor = Colors.Green;
+                patient.IsEditing = true;
             }
+        }
+    }
+
+    // NEW: Cancel Logic
+    private void OnInlineCancelClicked(object sender, EventArgs e)
+    {
+        if (sender is Button button && button.BindingContext is Patient patient)
+        {
+            // Restore original values from backup
+            if (patient.Id.HasValue && _originalPatients.ContainsKey(patient.Id.Value))
+            {
+                var original = _originalPatients[patient.Id.Value];
+                patient.name = original.name;
+                patient.address = original.address;
+                patient.birthdate = original.birthdate;
+                patient.race = original.race;
+                patient.gender = original.gender;
+                
+                // Cleanup
+                _originalPatients.Remove(patient.Id.Value);
+            }
+            
+            // Exit edit mode
+            patient.IsEditing = false;
         }
     }
 }

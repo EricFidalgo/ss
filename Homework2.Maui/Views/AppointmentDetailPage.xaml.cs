@@ -21,7 +21,7 @@ public partial class AppointmentDetailPage : ContentPage
     private Patient? _selectedPatient;
     private Physician? _selectedPhysician;
 
-    // NEW: Collection to bind to the UI
+    // Diagnoses Collection
     private ObservableCollection<string> _diagnosesCollection;
 
     public string SelectedPatientId
@@ -63,9 +63,8 @@ public partial class AppointmentDetailPage : ContentPage
         _patients = new List<Patient?>();
         _allPhysicians = new List<Physician?>();
 
-        // NEW: Initialize collection and bind
+        // Initialize collection and bind
         _diagnosesCollection = new ObservableCollection<string>();
-        // Note: Ensure your XAML has a CollectionView named 'DiagnosesCollectionView'
         if (DiagnosesCollectionView != null)
         {
             DiagnosesCollectionView.ItemsSource = _diagnosesCollection;
@@ -96,7 +95,7 @@ public partial class AppointmentDetailPage : ContentPage
             _selectedTime = _currentAppointment.hour;
             
             UpdateAvailablePhysicians();
-            UpdatePatientButton(); // This will now trigger LoadDiagnoses
+            UpdatePatientButton(); 
             UpdatePhysicianButton();
             UpdateAvailableSlots();
         }
@@ -104,12 +103,6 @@ public partial class AppointmentDetailPage : ContentPage
 
     private async void OnSelectPatientClicked(object sender, EventArgs e)
     {
-        // GRADER NOTE: Requirement 4 (Picker Controls)
-        // I am using DisplayActionSheet (via MacPickerHelper logic) instead of the <Picker> control
-        // because the standard MAUI Picker is currently crashing/unresponsive on macOS Catalyst.
-        // This implementation still satisfies the requirement by strictly limiting user selection 
-        // to valid Patients only.
-
         if (_patients == null || !_patients.Any())
         {
             await DisplayAlert("No Patients", "Please add patients first.", "OK");
@@ -174,8 +167,6 @@ public partial class AppointmentDetailPage : ContentPage
             PatientButton.Text = _selectedPatient.name ?? "Select Patient";
             PatientButton.BackgroundColor = Colors.Green;
 
-            // NEW: Show the diagnosis section and load data
-            // Ensure your XAML has a Frame named 'DiagnosesFrame'
             if (DiagnosesFrame != null) DiagnosesFrame.IsVisible = true;
             LoadDiagnoses();
         }
@@ -184,7 +175,6 @@ public partial class AppointmentDetailPage : ContentPage
             PatientButton.Text = "Select Patient";
             PatientButton.BackgroundColor = Color.FromArgb("#512BD4");
 
-            // NEW: Hide the diagnosis section
             if (DiagnosesFrame != null) DiagnosesFrame.IsVisible = false;
             _diagnosesCollection.Clear();
         }
@@ -204,7 +194,6 @@ public partial class AppointmentDetailPage : ContentPage
         }
     }
 
-    // NEW: Load diagnoses for the selected patient
     private void LoadDiagnoses()
     {
         _diagnosesCollection.Clear();
@@ -217,12 +206,9 @@ public partial class AppointmentDetailPage : ContentPage
         }
     }
 
-    // NEW: Add a diagnosis to the list
     private void OnAddDiagnosisClicked(object sender, EventArgs e)
     {
-        // Ensure your XAML has an Entry named 'NewDiagnosisEntry'
         if (NewDiagnosisEntry == null) return;
-
         string newDiag = NewDiagnosisEntry.Text;
 
         if (string.IsNullOrWhiteSpace(newDiag))
@@ -233,14 +219,21 @@ public partial class AppointmentDetailPage : ContentPage
 
         if (_selectedPatient != null)
         {
-            // Add to the local object list
             _selectedPatient.diagnoses.Add(newDiag);
-            
-            // Add to UI list
             _diagnosesCollection.Add(newDiag);
-            
-            // Clear input
             NewDiagnosisEntry.Text = string.Empty;
+        }
+    }
+    
+    private void OnDeleteDiagnosisClicked(object sender, EventArgs e)
+    {
+        if (sender is Button button && button.BindingContext is string diagnosis)
+        {
+            _diagnosesCollection.Remove(diagnosis);
+            if (_selectedPatient != null && _selectedPatient.diagnoses != null)
+            {
+                _selectedPatient.diagnoses.Remove(diagnosis);
+            }
         }
     }
 
@@ -259,7 +252,7 @@ public partial class AppointmentDetailPage : ContentPage
     {
         if (_selectedPatient == null)
         {
-            TimeSlotsCollectionView.ItemsSource = null;
+            BindableLayout.SetItemsSource(TimeSlotsLayout, null);
             SelectedTimeLabel.Text = "No time selected";
             return;
         }
@@ -268,16 +261,50 @@ public partial class AppointmentDetailPage : ContentPage
         int? excludeId = _currentAppointment?.Id;
 
         var availableSlots = _medicalDataService.GetAvailableSlots(selectedDate, _selectedPatient, excludeId);
-        TimeSlotsCollectionView.ItemsSource = availableSlots;
+        
+        // Use BindableLayout instead of CollectionView ItemsSource
+        BindableLayout.SetItemsSource(TimeSlotsLayout, availableSlots);
+        
+        // Force color refresh if a time was already selected
+        Dispatcher.Dispatch(() => RefreshTimeSlotColors());
     }
 
-    private void OnTimeSlotSelected(object sender, SelectionChangedEventArgs e)
+    // FIXED: Single Tap Logic using Buttons
+    private void OnTimeSlotClicked(object sender, EventArgs e)
     {
-        if (e.CurrentSelection.FirstOrDefault() is DateTime selectedTime)
+        if (sender is Button clickedButton && clickedButton.BindingContext is DateTime selectedTime)
         {
             _selectedTime = selectedTime;
             SelectedTimeLabel.Text = $"Selected: {_selectedTime:h:mm tt}";
             UpdateAvailablePhysicians();
+            RefreshTimeSlotColors();
+        }
+    }
+
+    // HELPER: Manually update colors because we are using simple Buttons
+    private void RefreshTimeSlotColors()
+    {
+        foreach (var child in TimeSlotsLayout.Children)
+        {
+            if (child is Button btn && btn.BindingContext is DateTime time)
+            {
+                if (time == _selectedTime)
+                {
+                    btn.BackgroundColor = Colors.Green;
+                }
+                else
+                {
+                    // Use the Primary resource color
+                    if (Application.Current.Resources.TryGetValue("Primary", out var color))
+                    {
+                         btn.BackgroundColor = (Color)color;
+                    }
+                    else
+                    {
+                        btn.BackgroundColor = Color.FromArgb("#512BD4"); // Fallback
+                    }
+                }
+            }
         }
     }
 
@@ -289,7 +316,6 @@ public partial class AppointmentDetailPage : ContentPage
             return;
         }
 
-        // 1. Save/Update the Appointment
         if (_currentAppointment == null)
         {
             _medicalDataService.CreateAppointment(_selectedPatient, _selectedPhysician, _selectedTime);
@@ -306,9 +332,7 @@ public partial class AppointmentDetailPage : ContentPage
             _medicalDataService.UpdateAppointment(updated);
         }
 
-        // 2. NEW: Save the Patient (to persist the added diagnoses)
         _medicalDataService.UpdatePatient(_selectedPatient);
-
         await Shell.Current.GoToAsync("..");
     }
 
@@ -336,7 +360,6 @@ public partial class AppointmentDetailPage : ContentPage
     {
         var availablePhysicians = GetAvailablePhysiciansForSelectedTime();
         
-        // If the currently selected physician is not in the new available list, clear the selection
         if (_selectedPhysician != null && !availablePhysicians.Contains(_selectedPhysician))
         {
             _selectedPhysician = null;
@@ -349,20 +372,5 @@ public partial class AppointmentDetailPage : ContentPage
     private List<Physician?> GetAvailablePhysiciansForSelectedTime()
     {
         return _allPhysicians.Where(physician => _medicalDataService.IsPhysicianAvailable(physician, _selectedTime)).ToList();
-    }
-
-    private void OnDeleteDiagnosisClicked(object sender, EventArgs e)
-    {
-        if (sender is Button button && button.BindingContext is string diagnosis)
-        {
-            // 1. Remove from the UI list
-            _diagnosesCollection.Remove(diagnosis);
-
-            // 2. Remove from the underlying Patient object
-            if (_selectedPatient != null && _selectedPatient.diagnoses != null)
-            {
-                _selectedPatient.diagnoses.Remove(diagnosis);
-            }
-        }
     }
 }

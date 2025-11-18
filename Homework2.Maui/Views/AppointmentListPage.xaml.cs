@@ -2,6 +2,7 @@ using Homework2.Maui.Models;
 using Homework2.Maui.Services;
 using System.Collections.ObjectModel;
 using System.Linq;
+using System.Collections.Generic;
 
 namespace Homework2.Maui.Views;
 
@@ -9,6 +10,12 @@ public partial class AppointmentListPage : ContentPage
 {
     private readonly MedicalDataService _medicalDataService;
     private ObservableCollection<Appointment?> _appointments;
+    
+    // Backup for Appointment fields (Date, Time, Patient Ref)
+    private Dictionary<int, Appointment> _originalAppointments = new Dictionary<int, Appointment>();
+    
+    // NEW: Backup specifically for the Diagnoses list (since it's a reference type)
+    private Dictionary<int, List<string>> _originalDiagnoses = new Dictionary<int, List<string>>();
 
     public AppointmentListPage(MedicalDataService medicalDataService)
     {
@@ -38,7 +45,8 @@ public partial class AppointmentListPage : ContentPage
             _appointments.Add(appointment);
         }
         
-        AppointmentCountLabel.Text = $"{_appointments.Count} appointment{(_appointments.Count != 1 ? "s" : "")} scheduled";
+        if (AppointmentCountLabel != null)
+            AppointmentCountLabel.Text = $"{_appointments.Count} appointment{(_appointments.Count != 1 ? "s" : "")} scheduled";
     }
 
     private async void OnAddAppointmentClicked(object sender, EventArgs e)
@@ -54,36 +62,12 @@ public partial class AppointmentListPage : ContentPage
             {
                 // --- VALIDATION ON SAVE ---
 
-                // 1. Check Date (Weekend)
                 if (appointment.hour.DayOfWeek == DayOfWeek.Saturday || appointment.hour.DayOfWeek == DayOfWeek.Sunday)
                 {
                     await DisplayAlert("Error", "Appointments cannot be scheduled on weekends.", "OK");
                     return;
                 }
 
-                // 2. Check Patient Availability
-                // We manually check because the Service doesn't have "IsPatientAvailable" public, 
-                // but we can check the list directly.
-                if (appointment.patients != null)
-                {
-                    bool isPatientBusy = appointment.patients.unavailable_hours.Any(dt => 
-                        dt == appointment.hour && 
-                        dt != appointment.hour // Wait, the patient HAS this hour in their list already because of THIS appointment.
-                        // To fix this logic, we should check if the time exists AND it belongs to a DIFFERENT appointment.
-                        // But since we don't have back-refs easily, we rely on the fact that "UpdateAppointment"
-                        // in the service handles the swap.
-                        // However, for VALIDATION, we must check if they are double-booked.
-                    );
-                    
-                    // Simpler check: Use the Service's GetAvailableSlots logic concepts
-                    // If the patient has this hour marked unavailable, AND it's not this exact appointment instance...
-                    // Since we are editing "in-place", the availability list might already contain this slot.
-                    // The only way to be sure is to check if they are available at the NEW time (if changed) 
-                    // or if we swapped patients.
-                }
-
-                // Let's use the Service methods to validate properly by asking "Is this valid?"
-                // The Service helper `GetAvailableSlots` includes the logic to "Ignore" the current appointment ID.
                 var validSlots = _medicalDataService.GetAvailableSlots(appointment.hour.Date, appointment.patients, appointment.Id);
                 if (!validSlots.Contains(appointment.hour))
                 {
@@ -91,7 +75,6 @@ public partial class AppointmentListPage : ContentPage
                      return;
                 }
 
-                // 3. Check Physician Availability
                 var validPhysicians = _medicalDataService.GetAvailablePhysicians(appointment.hour, appointment.Id);
                 if (appointment.physicians != null && !validPhysicians.Any(p => p?.Id == appointment.physicians.Id))
                 {
@@ -100,25 +83,87 @@ public partial class AppointmentListPage : ContentPage
                 }
 
                 // --- SAVE ---
+                
+                // 1. Save Appointment Changes (Date, Time, Refs)
                 _medicalDataService.UpdateAppointment(appointment);
                 
-                // Switch back to View Mode
+                // 2. Save Patient Changes (Diagnoses) - NEW
+                if (appointment.patients != null)
+                {
+                    _medicalDataService.UpdatePatient(appointment.patients);
+                }
+                
+                // Cleanup Backups
+                if (_originalAppointments.ContainsKey(appointment.Id))
+                    _originalAppointments.Remove(appointment.Id);
+                if (_originalDiagnoses.ContainsKey(appointment.Id))
+                    _originalDiagnoses.Remove(appointment.Id);
+
                 appointment.IsEditing = false;
-                button.Text = "✏️ Edit Inline";
-                button.BackgroundColor = (Color)Application.Current.Resources["Primary"]; 
-                RefreshAppointmentList(); // Refresh to re-sort if date changed
+                RefreshAppointmentList(); 
             }
             else
             {
-                // START EDITING ACTION
+                // --- START EDITING (Create Backups) ---
+                
+                // 1. Backup Appointment properties
+                if (!_originalAppointments.ContainsKey(appointment.Id))
+                {
+                    var clone = new Appointment
+                    {
+                        Id = appointment.Id,
+                        hour = appointment.hour,
+                        patients = appointment.patients,
+                        physicians = appointment.physicians
+                    };
+                    _originalAppointments[appointment.Id] = clone;
+                }
+
+                // 2. Backup Diagnoses List - NEW
+                if (appointment.patients != null && !_originalDiagnoses.ContainsKey(appointment.Id))
+                {
+                    // Create a deep copy of the list of strings
+                    _originalDiagnoses[appointment.Id] = new List<string>(appointment.patients.diagnoses);
+                }
+                
                 appointment.IsEditing = true;
-                button.Text = "💾 Save";
-                button.BackgroundColor = Colors.Green;
             }
         }
     }
 
-    // Handles the "Delete" button
+    private void OnInlineCancelClicked(object sender, EventArgs e)
+    {
+        if (sender is Button button && button.BindingContext is Appointment appointment)
+        {
+            // 1. Restore Appointment Properties
+            if (_originalAppointments.ContainsKey(appointment.Id))
+            {
+                var original = _originalAppointments[appointment.Id];
+                appointment.hour = original.hour;
+                appointment.patients = original.patients;
+                appointment.physicians = original.physicians;
+                
+                _originalAppointments.Remove(appointment.Id);
+            }
+
+            // 2. Restore Diagnoses List - NEW
+            if (_originalDiagnoses.ContainsKey(appointment.Id) && appointment.patients != null)
+            {
+                var oldDiagnoses = _originalDiagnoses[appointment.Id];
+                
+                appointment.patients.diagnoses.Clear();
+                foreach (var diag in oldDiagnoses)
+                {
+                    appointment.patients.diagnoses.Add(diag);
+                }
+
+                _originalDiagnoses.Remove(appointment.Id);
+            }
+            
+            appointment.IsEditing = false;
+        }
+    }
+
     private async void OnInlineDeleteClicked(object sender, EventArgs e)
     {
         if (sender is VisualElement button && button.BindingContext is Appointment appointment)
@@ -146,17 +191,10 @@ public partial class AppointmentListPage : ContentPage
     {
         if (sender is VisualElement element && element.BindingContext is Appointment appointment)
         {
-            // Filter patients: Only show those available at the current appointment time
-            // (Passing appointment.Id allows the service to say "The current patient is available for this slot")
             var allPatients = _medicalDataService.GetPatients();
-            
-            // We manually filter here because we want to see ALL valid patients for this specific time slot
             var availablePatients = allPatients.Where(p => 
             {
-                // If this is the patient currently assigned to this appointment, they are "available" (to keep it)
                 if (p.Id == appointment.patients?.Id) return true;
-
-                // Otherwise, check if they are free at this time
                 return !p.unavailable_hours.Contains(appointment.hour);
             }).ToList();
 
@@ -180,7 +218,6 @@ public partial class AppointmentListPage : ContentPage
     {
         if (sender is VisualElement element && element.BindingContext is Appointment appointment)
         {
-            // Use Service to get physicians available at this time (excluding current appointment lock)
             var availablePhysicians = _medicalDataService.GetAvailablePhysicians(appointment.hour, appointment.Id);
 
             if (!availablePhysicians.Any())
@@ -204,7 +241,6 @@ public partial class AppointmentListPage : ContentPage
     {
         if (sender is VisualElement element && element.BindingContext is Appointment appointment)
         {
-            // Use Service to get slots where BOTH the current patient and ANY physician are available
             var slots = _medicalDataService.GetAvailableSlots(appointment.hour.Date, appointment.patients, appointment.Id);
             
             if (!slots.Any())
@@ -218,7 +254,6 @@ public partial class AppointmentListPage : ContentPage
             
             if (selectedTimeStr != "Cancel" && DateTime.TryParse(selectedTimeStr, out DateTime selectedTime))
             {
-                // Combine the existing Date with the new Time
                 appointment.hour = appointment.hour.Date + selectedTime.TimeOfDay;
             }
         }
@@ -231,21 +266,20 @@ public partial class AppointmentListPage : ContentPage
             if (e.NewDate.DayOfWeek == DayOfWeek.Saturday || e.NewDate.DayOfWeek == DayOfWeek.Sunday)
             {
                 DisplayAlert("Invalid Date", "Appointments cannot be scheduled on weekends. Please select a weekday.", "OK");
-                // Optional: Revert date or force to Monday?
-                // picker.Date = e.OldDate; // This might cause a loop if not careful, usually better to just warn and let user fix.
             }
             else
             {
-                // Update the appointment hour (keep time, change date)
                 appointment.hour = e.NewDate.Date + appointment.hour.TimeOfDay;
             }
         }
     }
+    
+    // --- Diagnoses Handlers (UPDATED: Removed Immediate Save) ---
+
     private void OnInlineAddDiagnosisClicked(object sender, EventArgs e)
     {
         if (sender is Button addButton && addButton.CommandParameter is Appointment appointment)
         {
-            // Traverse up from the button to find the specific Entry within this Appointment's row
             Grid? addGrid = addButton.Parent as Grid;
             Entry? newDiagnosisEntry = addGrid?.Children.OfType<Entry>().FirstOrDefault();
 
@@ -255,11 +289,12 @@ public partial class AppointmentListPage : ContentPage
 
                 if (!string.IsNullOrWhiteSpace(newDiag) && appointment.patients != null)
                 {
-                    appointment.patients.diagnoses.Add(newDiag); // ObservableCollection handles UI update
-                    newDiagnosisEntry.Text = string.Empty; // Clear input
-
-                    // No need to reassign list for ObservableCollection; just update Patient to save
-                    _medicalDataService.UpdatePatient(appointment.patients);
+                    // 1. Add to ObservableCollection (Updates UI immediately)
+                    appointment.patients.diagnoses.Add(newDiag);
+                    newDiagnosisEntry.Text = string.Empty;
+                    
+                    // NOTE: We DO NOT call UpdatePatient here anymore.
+                    // Changes are only persisted if the user clicks the main "Save" button.
                 }
             }
         }
@@ -271,9 +306,10 @@ public partial class AppointmentListPage : ContentPage
         {
             if (deleteButton.BindingContext is string diagnosisToRemove && appointment.patients != null)
             {
-                appointment.patients.diagnoses.Remove(diagnosisToRemove); // ObservableCollection handles UI update
-                // No need to reassign list for ObservableCollection; just update Patient to save
-                _medicalDataService.UpdatePatient(appointment.patients);
+                // 1. Remove from ObservableCollection (Updates UI immediately)
+                appointment.patients.diagnoses.Remove(diagnosisToRemove);
+                
+                // NOTE: We DO NOT call UpdatePatient here anymore.
             }
         }
     }

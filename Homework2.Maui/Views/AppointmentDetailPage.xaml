@@ -74,33 +74,25 @@
                            FontSize="11"
                            TextColor="{StaticResource Gray500}"/>
                     
-                    <CollectionView x:Name="TimeSlotsCollectionView"
-                                   SelectionMode="Single"
-                                   SelectionChanged="OnTimeSlotSelected"
-                                   HeightRequest="200">
-                        <CollectionView.ItemsLayout>
-                            <GridItemsLayout Orientation="Vertical" 
-                                           Span="3"
-                                           HorizontalItemSpacing="8"
-                                           VerticalItemSpacing="8"/>
-                        </CollectionView.ItemsLayout>
-                        <CollectionView.ItemTemplate>
+                    <FlexLayout x:Name="TimeSlotsLayout"
+                                Wrap="Wrap"
+                                JustifyContent="SpaceBetween"
+                                AlignContent="Start">
+                        <BindableLayout.ItemTemplate>
                             <DataTemplate x:DataType="sys:DateTime">
-                                <Frame Padding="12" 
-                                       BackgroundColor="{StaticResource Primary}"
-                                       BorderColor="{StaticResource Primary}"
-                                       CornerRadius="10"
-                                       HasShadow="False">
-                                    <Label Text="{Binding ., StringFormat='{0:h:mm tt}'}" 
-                                          FontSize="13"
-                                          FontAttributes="Bold"
-                                          TextColor="White"
-                                          HorizontalOptions="Center"
-                                          VerticalOptions="Center"/>
-                                </Frame>
+                                <Button Text="{Binding ., StringFormat='{0:h:mm tt}'}" 
+                                        Clicked="OnTimeSlotClicked"
+                                        FontSize="13"
+                                        FontAttributes="Bold"
+                                        TextColor="White"
+                                        BackgroundColor="{StaticResource Primary}"
+                                        CornerRadius="8"
+                                        HeightRequest="45"
+                                        WidthRequest="100"
+                                        Margin="0,0,0,10"/>
                             </DataTemplate>
-                        </CollectionView.ItemTemplate>
-                    </CollectionView>
+                        </BindableLayout.ItemTemplate>
+                    </FlexLayout>
                     
                     <Frame BackgroundColor="{StaticResource Secondary}"
                            Padding="12"
@@ -177,13 +169,11 @@
                                        BorderColor="Transparent"
                                        CornerRadius="8"
                                        HasShadow="False">
-                                    
                                     <Grid ColumnDefinitions="*, Auto" VerticalOptions="Center">
                                         <Label Grid.Column="0" 
                                                Text="{Binding .}" 
                                                FontSize="13"
                                                TextColor="{StaticResource Primary}"/>
-                                        
                                         <Button Grid.Column="1"
                                                 Text="✕"
                                                 Clicked="OnDeleteDiagnosisClicked"

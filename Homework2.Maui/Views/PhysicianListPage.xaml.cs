@@ -27,6 +27,9 @@ public partial class PhysicianListPage : ContentPage
     private readonly MedicalDataService _medicalDataService;
     private ObservableCollection<Physician?> _physicians;
 
+    // NEW: Backup dictionary for Cancel functionality
+    private Dictionary<int, Physician> _originalPhysicians = new Dictionary<int, Physician>();
+
     public PhysicianListPage(MedicalDataService medicalDataService)
     {
         InitializeComponent();
@@ -88,6 +91,7 @@ public partial class PhysicianListPage : ContentPage
         }
     }
 
+    // UPDATED: Edit Logic with Backup
     private void OnInlineEditClicked(object sender, EventArgs e)
     {
         if (sender is Button button && button.BindingContext is Physician physician)
@@ -95,27 +99,61 @@ public partial class PhysicianListPage : ContentPage
             if (physician.IsEditing)
             {
                 // SAVE ACTION
-                // Call the service to save changes
                 _medicalDataService.UpdatePhysician(physician);
                 
-                // Switch back to View Mode
+                // Remove from backup since saved successfully
+                if (physician.Id.HasValue) _originalPhysicians.Remove(physician.Id.Value);
+
+                // Switch back to View Mode (Button styling handled by XAML Triggers)
                 physician.IsEditing = false;
-                button.Text = "✏️ Edit Inline";
-                button.BackgroundColor = (Color)Application.Current.Resources["Primary"]; 
             }
             else
             {
-                // START EDITING ACTION
+                // START EDITING - Create Backup
+                if (physician.Id.HasValue && !_originalPhysicians.ContainsKey(physician.Id.Value))
+                {
+                    var clone = new Physician
+                    {
+                        Id = physician.Id,
+                        name = physician.name,
+                        license_number = physician.license_number,
+                        graduation = physician.graduation,
+                        // Deep copy the list of specializations
+                        specializations = new List<string>(physician.specializations)
+                    };
+                    _originalPhysicians[physician.Id.Value] = clone;
+                }
+
                 physician.IsEditing = true;
-                
-                // Change button to "Save"
-                button.Text = "💾 Save";
-                button.BackgroundColor = Colors.Green;
             }
         }
     }
 
-    // Ensure this method is also present for the "Delete" button
+    // NEW: Cancel Logic
+    private void OnInlineCancelClicked(object sender, EventArgs e)
+    {
+        if (sender is Button button && button.BindingContext is Physician physician)
+        {
+            // Restore from backup
+            if (physician.Id.HasValue && _originalPhysicians.ContainsKey(physician.Id.Value))
+            {
+                var original = _originalPhysicians[physician.Id.Value];
+                physician.name = original.name;
+                physician.license_number = original.license_number;
+                physician.graduation = original.graduation;
+                
+                // Restore list and trigger binding update (via property assignment if possible, or directly)
+                physician.specializations = new List<string>(original.specializations);
+                // Force update of the SpecializationText if the model logic handles it
+                // (Assuming SpecializationText is a property in your model that updates on property change)
+                
+                _originalPhysicians.Remove(physician.Id.Value);
+            }
+
+            physician.IsEditing = false;
+        }
+    }
+
     private async void OnInlineDeleteClicked(object sender, EventArgs e)
     {
         if (sender is VisualElement button && button.BindingContext is Physician physician)
