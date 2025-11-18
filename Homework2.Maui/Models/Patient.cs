@@ -1,4 +1,4 @@
-using System.Collections.ObjectModel; // Required for ObservableCollection
+using System.Collections.ObjectModel;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
@@ -26,7 +26,25 @@ namespace Homework2.Maui.Models
         public DateTime birthdate
         {
             get => _birthdate;
-            set { _birthdate = value; OnPropertyChanged(); }
+            set 
+            { 
+                _birthdate = value; 
+                OnPropertyChanged(); 
+                // Notify that the IsUnderage property may have changed
+                OnPropertyChanged(nameof(IsUnderage)); 
+            }
+        }
+
+        // New property to determine if patient is a minor
+        public bool IsUnderage
+        {
+            get
+            {
+                var today = DateTime.Today;
+                var age = today.Year - birthdate.Year;
+                if (birthdate.Date > today.AddYears(-age)) age--;
+                return age < 18;
+            }
         }
 
         private string? _race;
@@ -45,8 +63,6 @@ namespace Homework2.Maui.Models
 
         public List<string> medical_notes { get; set; } = new List<string>();
 
-        // --- UPDATED: diagnoses is now an ObservableCollection ---
-        // This allows the UI to react immediately when items are added or removed.
         private ObservableCollection<string> _diagnoses = new ObservableCollection<string>();
         public ObservableCollection<string> diagnoses
         {
@@ -80,7 +96,6 @@ namespace Homework2.Maui.Models
 
         public bool IsNotEditing => !IsEditing;
 
-        // Standard INotifyPropertyChanged implementation
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string name = null)
         {
