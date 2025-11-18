@@ -11,7 +11,7 @@ public partial class AppointmentListPage : ContentPage
     private readonly MedicalDataService _medicalDataService;
     private ObservableCollection<Appointment?> _appointments;
     
-    // Backup for Appointment fields (Date, Time, Patient Ref)
+    // Backup for Appointment fields (Date, Time, Patient Ref, Room)
     private Dictionary<int, Appointment> _originalAppointments = new Dictionary<int, Appointment>();
     
     // Backup for Reference Types (Diagnoses & Treatments)
@@ -82,10 +82,21 @@ public partial class AppointmentListPage : ContentPage
                     await DisplayAlert("Error", "The selected Physician is not available at this time.", "OK");
                     return;
                 }
+                
+                // --- NEW ROOM VALIDATION ---
+                if (!string.IsNullOrWhiteSpace(appointment.Room))
+                {
+                    if (!_medicalDataService.IsRoomAvailable(appointment.Room, appointment.hour, appointment.Id))
+                    {
+                        await DisplayAlert("Conflict", $"Room '{appointment.Room}' is already booked at this time.", "OK");
+                        return; // Stop save
+                    }
+                }
+                // ---------------------------
 
                 // --- SAVE ---
                 
-                // 1. Save Appointment Changes (Date, Time, Refs, Treatments)
+                // 1. Save Appointment Changes (Date, Time, Refs, Treatments, Room)
                 _medicalDataService.UpdateAppointment(appointment);
                 
                 // 2. Save Patient Changes (Diagnoses)
@@ -117,7 +128,8 @@ public partial class AppointmentListPage : ContentPage
                         Id = appointment.Id,
                         hour = appointment.hour,
                         patients = appointment.patients,
-                        physicians = appointment.physicians
+                        physicians = appointment.physicians,
+                        Room = appointment.Room // Backup Room
                     };
                     _originalAppointments[appointment.Id] = clone;
                 }
@@ -131,7 +143,6 @@ public partial class AppointmentListPage : ContentPage
                 // 3. Backup Treatments List
                 if (!_originalTreatments.ContainsKey(appointment.Id))
                 {
-                    // Create a shallow copy of the list structure
                     _originalTreatments[appointment.Id] = new List<Treatment>(appointment.Treatments);
                 }
                 
@@ -151,6 +162,7 @@ public partial class AppointmentListPage : ContentPage
                 appointment.hour = original.hour;
                 appointment.patients = original.patients;
                 appointment.physicians = original.physicians;
+                appointment.Room = original.Room; // Restore Room
                 
                 _originalAppointments.Remove(appointment.Id);
             }
@@ -330,7 +342,7 @@ public partial class AppointmentListPage : ContentPage
         }
     }
 
-    // --- Treatment Handlers (NEW) ---
+    // --- Treatment Handlers ---
 
     private void OnInlineAddTreatmentClicked(object sender, EventArgs e)
     {
@@ -358,14 +370,11 @@ public partial class AppointmentListPage : ContentPage
                     nameEntry.Text = string.Empty;
                     costEntry.Text = string.Empty;
 
-                    // Force UI Update for the List above this grid
                     if (addGrid.Parent is VerticalStackLayout parentLayout)
                     {
-                        // Find the sibling StackLayout that holds the list
                         var listStack = parentLayout.Children.OfType<StackLayout>().FirstOrDefault();
                         if (listStack != null)
                         {
-                             // Resetting the source forces the BindableLayout to redraw
                              BindableLayout.SetItemsSource(listStack, null);
                              BindableLayout.SetItemsSource(listStack, appointment.Treatments);
                         }
@@ -387,8 +396,6 @@ public partial class AppointmentListPage : ContentPage
             {
                 appointment.Treatments.Remove(treatmentToRemove);
                 
-                // Force UI Update: Find the parent StackLayout
-                // Button -> Grid -> StackLayout (The list container)
                 if (deleteButton.Parent is Grid itemGrid && itemGrid.Parent is StackLayout listStack)
                 {
                      BindableLayout.SetItemsSource(listStack, null);
