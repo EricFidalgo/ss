@@ -14,8 +14,9 @@ public partial class AppointmentListPage : ContentPage
     // Backup for Appointment fields (Date, Time, Patient Ref)
     private Dictionary<int, Appointment> _originalAppointments = new Dictionary<int, Appointment>();
     
-    // NEW: Backup specifically for the Diagnoses list (since it's a reference type)
+    // Backup for Reference Types (Diagnoses & Treatments)
     private Dictionary<int, List<string>> _originalDiagnoses = new Dictionary<int, List<string>>();
+    private Dictionary<int, List<Treatment>> _originalTreatments = new Dictionary<int, List<Treatment>>();
 
     public AppointmentListPage(MedicalDataService medicalDataService)
     {
@@ -84,10 +85,10 @@ public partial class AppointmentListPage : ContentPage
 
                 // --- SAVE ---
                 
-                // 1. Save Appointment Changes (Date, Time, Refs)
+                // 1. Save Appointment Changes (Date, Time, Refs, Treatments)
                 _medicalDataService.UpdateAppointment(appointment);
                 
-                // 2. Save Patient Changes (Diagnoses) - NEW
+                // 2. Save Patient Changes (Diagnoses)
                 if (appointment.patients != null)
                 {
                     _medicalDataService.UpdatePatient(appointment.patients);
@@ -98,6 +99,8 @@ public partial class AppointmentListPage : ContentPage
                     _originalAppointments.Remove(appointment.Id);
                 if (_originalDiagnoses.ContainsKey(appointment.Id))
                     _originalDiagnoses.Remove(appointment.Id);
+                if (_originalTreatments.ContainsKey(appointment.Id))
+                    _originalTreatments.Remove(appointment.Id);
 
                 appointment.IsEditing = false;
                 RefreshAppointmentList(); 
@@ -119,11 +122,17 @@ public partial class AppointmentListPage : ContentPage
                     _originalAppointments[appointment.Id] = clone;
                 }
 
-                // 2. Backup Diagnoses List - NEW
+                // 2. Backup Diagnoses List
                 if (appointment.patients != null && !_originalDiagnoses.ContainsKey(appointment.Id))
                 {
-                    // Create a deep copy of the list of strings
                     _originalDiagnoses[appointment.Id] = new List<string>(appointment.patients.diagnoses);
+                }
+
+                // 3. Backup Treatments List
+                if (!_originalTreatments.ContainsKey(appointment.Id))
+                {
+                    // Create a shallow copy of the list structure
+                    _originalTreatments[appointment.Id] = new List<Treatment>(appointment.Treatments);
                 }
                 
                 appointment.IsEditing = true;
@@ -146,7 +155,7 @@ public partial class AppointmentListPage : ContentPage
                 _originalAppointments.Remove(appointment.Id);
             }
 
-            // 2. Restore Diagnoses List - NEW
+            // 2. Restore Diagnoses List
             if (_originalDiagnoses.ContainsKey(appointment.Id) && appointment.patients != null)
             {
                 var oldDiagnoses = _originalDiagnoses[appointment.Id];
@@ -158,6 +167,20 @@ public partial class AppointmentListPage : ContentPage
                 }
 
                 _originalDiagnoses.Remove(appointment.Id);
+            }
+
+            // 3. Restore Treatments List
+            if (_originalTreatments.ContainsKey(appointment.Id))
+            {
+                var oldTreatments = _originalTreatments[appointment.Id];
+                
+                appointment.Treatments.Clear();
+                foreach (var t in oldTreatments)
+                {
+                    appointment.Treatments.Add(t);
+                }
+                
+                _originalTreatments.Remove(appointment.Id);
             }
             
             appointment.IsEditing = false;
@@ -274,7 +297,7 @@ public partial class AppointmentListPage : ContentPage
         }
     }
     
-    // --- Diagnoses Handlers (UPDATED: Removed Immediate Save) ---
+    // --- Diagnoses Handlers ---
 
     private void OnInlineAddDiagnosisClicked(object sender, EventArgs e)
     {
@@ -289,12 +312,8 @@ public partial class AppointmentListPage : ContentPage
 
                 if (!string.IsNullOrWhiteSpace(newDiag) && appointment.patients != null)
                 {
-                    // 1. Add to ObservableCollection (Updates UI immediately)
                     appointment.patients.diagnoses.Add(newDiag);
                     newDiagnosisEntry.Text = string.Empty;
-                    
-                    // NOTE: We DO NOT call UpdatePatient here anymore.
-                    // Changes are only persisted if the user clicks the main "Save" button.
                 }
             }
         }
@@ -306,10 +325,75 @@ public partial class AppointmentListPage : ContentPage
         {
             if (deleteButton.BindingContext is string diagnosisToRemove && appointment.patients != null)
             {
-                // 1. Remove from ObservableCollection (Updates UI immediately)
                 appointment.patients.diagnoses.Remove(diagnosisToRemove);
+            }
+        }
+    }
+
+    // --- Treatment Handlers (NEW) ---
+
+    private void OnInlineAddTreatmentClicked(object sender, EventArgs e)
+    {
+        if (sender is Button addButton && addButton.CommandParameter is Appointment appointment)
+        {
+            Grid? addGrid = addButton.Parent as Grid;
+            if (addGrid == null) return;
+
+            Entry? nameEntry = addGrid.Children.OfType<Entry>().FirstOrDefault(x => x.Placeholder == "Treatment Name");
+            Entry? costEntry = addGrid.Children.OfType<Entry>().FirstOrDefault(x => x.Placeholder == "Cost");
+
+            if (nameEntry != null && costEntry != null)
+            {
+                string name = nameEntry.Text;
+                if (string.IsNullOrWhiteSpace(name))
+                {
+                     DisplayAlert("Error", "Please enter a treatment name.", "OK");
+                     return;
+                }
+
+                if (decimal.TryParse(costEntry.Text, out decimal cost))
+                {
+                    appointment.Treatments.Add(new Treatment { Name = name, Cost = cost });
+                    
+                    nameEntry.Text = string.Empty;
+                    costEntry.Text = string.Empty;
+
+                    // Force UI Update for the List above this grid
+                    if (addGrid.Parent is VerticalStackLayout parentLayout)
+                    {
+                        // Find the sibling StackLayout that holds the list
+                        var listStack = parentLayout.Children.OfType<StackLayout>().FirstOrDefault();
+                        if (listStack != null)
+                        {
+                             // Resetting the source forces the BindableLayout to redraw
+                             BindableLayout.SetItemsSource(listStack, null);
+                             BindableLayout.SetItemsSource(listStack, appointment.Treatments);
+                        }
+                    }
+                }
+                else
+                {
+                    DisplayAlert("Error", "Please enter a valid numeric cost.", "OK");
+                }
+            }
+        }
+    }
+
+    private void OnInlineDeleteTreatmentClicked(object sender, EventArgs e)
+    {
+        if (sender is Button deleteButton && deleteButton.CommandParameter is Appointment appointment)
+        {
+            if (deleteButton.BindingContext is Treatment treatmentToRemove)
+            {
+                appointment.Treatments.Remove(treatmentToRemove);
                 
-                // NOTE: We DO NOT call UpdatePatient here anymore.
+                // Force UI Update: Find the parent StackLayout
+                // Button -> Grid -> StackLayout (The list container)
+                if (deleteButton.Parent is Grid itemGrid && itemGrid.Parent is StackLayout listStack)
+                {
+                     BindableLayout.SetItemsSource(listStack, null);
+                     BindableLayout.SetItemsSource(listStack, appointment.Treatments);
+                }
             }
         }
     }
