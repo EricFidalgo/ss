@@ -176,16 +176,20 @@ public partial class PatientListPage : ContentPage
         {
             if (patient.IsEditing)
             {
-                // SAVE ACTION (Async Update)
+                // --- CRITICAL FIX: WE MUST AWAIT THIS ---
                 await _medicalDataService.UpdatePatient(patient);
                 
+                // Cleanup backup
                 if (patient.Id.HasValue) _originalPatients.Remove(patient.Id.Value);
 
                 patient.IsEditing = false;
+                
+                // OPTIONAL: Force a refresh to be sure we match the server
+                // await RefreshPatientList(); 
             }
             else
             {
-                // START EDITING ACTION - Create Backup
+                // START EDITING
                 if (patient.Id.HasValue && !_originalPatients.ContainsKey(patient.Id.Value))
                 {
                     var clone = new Patient

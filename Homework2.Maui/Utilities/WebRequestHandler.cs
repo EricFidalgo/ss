@@ -81,26 +81,35 @@ namespace Library.eCommerce.Utilities
         // Added PUT for Update functionality
         public async Task<string> Put(string url, object obj)
         {
+            // Ensure port matches your API (7009)
             var fullUrl = $"https://{host}:{port}{url}";
-            using (var client = new HttpClient())
+            
+            try 
             {
-                using (var request = new HttpRequestMessage(HttpMethod.Put, fullUrl))
+                using (var client = new HttpClient())
                 {
-                    var json = JsonConvert.SerializeObject(obj);
-                    using (var stringContent = new StringContent(json, Encoding.UTF8, "application/json"))
+                    using (var request = new HttpRequestMessage(HttpMethod.Put, fullUrl))
                     {
-                        request.Content = stringContent;
-
-                        using (var response = await client.SendAsync(request).ConfigureAwait(false))
+                        var json = JsonConvert.SerializeObject(obj);
+                        using (var stringContent = new StringContent(json, Encoding.UTF8, "application/json"))
                         {
-                            if (response.IsSuccessStatusCode)
+                            request.Content = stringContent;
+
+                            using (var response = await client.SendAsync(request).ConfigureAwait(false))
                             {
-                                return await response.Content.ReadAsStringAsync();
+                                if (response.IsSuccessStatusCode)
+                                {
+                                    return await response.Content.ReadAsStringAsync();
+                                }
+                                return "ERROR";
                             }
-                            return "ERROR";
                         }
                     }
                 }
+            }
+            catch (Exception) 
+            {
+                return "ERROR"; 
             }
         }
     }

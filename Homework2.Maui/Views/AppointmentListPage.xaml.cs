@@ -226,7 +226,10 @@ public partial class AppointmentListPage : ContentPage
     {
         if (sender is VisualElement element && element.BindingContext is Appointment appointment)
         {
-            var allPatients = _medicalDataService.GetPatients();
+            // FIX: Await the API call first!
+            var allPatients = await _medicalDataService.GetPatients();
+            
+            // Now we can filter the list
             var availablePatients = allPatients.Where(p => 
             {
                 if (p.Id == appointment.patients?.Id) return true;

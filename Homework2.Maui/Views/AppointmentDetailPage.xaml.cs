@@ -86,9 +86,15 @@ public partial class AppointmentDetailPage : ContentPage
         LoadData();
     }
 
-    private void LoadData()
+    private async void LoadData()
     {
-        _patients = _medicalDataService.GetPatients();
+        // FIX: Await the API call
+        var patientsFromApi = await _medicalDataService.GetPatients();
+        
+        // FIX: Convert List<Patient> to List<Patient?> to match your class field
+        _patients = new List<Patient?>(patientsFromApi);
+
+        // The rest remains the same...
         _allPhysicians = _medicalDataService.GetPhysicians();
 
         if (_currentAppointment != null)
@@ -98,7 +104,6 @@ public partial class AppointmentDetailPage : ContentPage
             AppointmentDatePicker.Date = _currentAppointment.hour.Date;
             _selectedTime = _currentAppointment.hour;
             
-            // Load Room
             RoomEntry.Text = _currentAppointment.Room;
             
             UpdateAvailablePhysicians();
@@ -106,7 +111,6 @@ public partial class AppointmentDetailPage : ContentPage
             UpdatePhysicianButton();
             UpdateAvailableSlots();
 
-            // Load Treatments
             _treatmentsCollection.Clear();
             if (_currentAppointment.Treatments != null)
             {
