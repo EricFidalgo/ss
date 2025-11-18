@@ -1,5 +1,9 @@
 using Homework2.Maui.Models;
 using Homework2.Maui.Services;
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using Microsoft.Maui.Controls;
 
 namespace Homework2.Maui.Views;
 
@@ -9,38 +13,19 @@ public partial class PatientDetailPage : ContentPage
     private readonly MedicalDataService _medicalDataService;
     private Patient _currentPatient;
 
+    // Handles the "id" passed from the list page
     public string PatientId
     {
         set
         {
             if (string.IsNullOrEmpty(value))
             {
-                Title = "Add Patient";
-                _currentPatient = new Patient();
-                DeleteButton.IsVisible = false;
+                SetupCreateMode();
             }
             else
             {
-                int patientId = Convert.ToInt32(value);
-                var patient = _medicalDataService.GetPatient(patientId);
-
-                if (patient == null)
-                {
-                    Title = "Add Patient";
-                    _currentPatient = new Patient();
-                    DeleteButton.IsVisible = false;
-                }
-                else
-                {
-                    _currentPatient = patient;
-                    Title = "Edit Patient";
-                    NameEntry.Text = _currentPatient.name;
-                    AddressEntry.Text = _currentPatient.address;
-                    BirthdatePicker.Date = _currentPatient.birthdate;
-                    RaceEntry.Text = _currentPatient.race;
-                    GenderEntry.Text = _currentPatient.gender;
-                    DeleteButton.IsVisible = true;
-                }
+                // Load patient data asynchronously
+                LoadPatient(Convert.ToInt32(value));
             }
         }
     }
@@ -49,13 +34,50 @@ public partial class PatientDetailPage : ContentPage
     {
         InitializeComponent();
         _medicalDataService = medicalDataService;
-
-        _currentPatient = new Patient();
-        Title = "Add Patient";
-        DeleteButton.IsVisible = false;
+        SetupCreateMode(); // Default to create mode
     }
 
-    // Helper method to determine how to close the page (Modal vs Standard)
+    private void SetupCreateMode()
+    {
+        Title = "Add Patient";
+        _currentPatient = new Patient();
+        DeleteButton.IsVisible = false;
+        ClearFields();
+    }
+
+    private void ClearFields()
+    {
+        NameEntry.Text = string.Empty;
+        AddressEntry.Text = string.Empty;
+        BirthdatePicker.Date = DateTime.Today;
+        RaceEntry.Text = string.Empty;
+        GenderEntry.Text = string.Empty;
+    }
+
+    private async void LoadPatient(int id)
+    {
+        var patient = await _medicalDataService.GetPatient(id);
+
+        if (patient == null)
+        {
+            await DisplayAlert("Error", "Patient not found.", "OK");
+            await ClosePageAsync();
+            return;
+        }
+
+        _currentPatient = patient;
+        Title = "Edit Patient";
+        
+        // Populate UI
+        NameEntry.Text = _currentPatient.name;
+        AddressEntry.Text = _currentPatient.address;
+        BirthdatePicker.Date = _currentPatient.birthdate;
+        RaceEntry.Text = _currentPatient.race;
+        GenderEntry.Text = _currentPatient.gender;
+        
+        DeleteButton.IsVisible = true;
+    }
+
     private async Task ClosePageAsync()
     {
         if (Navigation.ModalStack.Count > 0 && Navigation.ModalStack.Last() == this)
@@ -70,19 +92,20 @@ public partial class PatientDetailPage : ContentPage
 
     private async void OnSaveClicked(object? sender, EventArgs e)
     {
+        // Update model from UI
         _currentPatient.name = NameEntry.Text;
         _currentPatient.address = AddressEntry.Text;
         _currentPatient.birthdate = BirthdatePicker.Date;
         _currentPatient.race = RaceEntry.Text;
         _currentPatient.gender = GenderEntry.Text;
 
-        if (_currentPatient.Id == null)
+        if (_currentPatient.Id == null || _currentPatient.Id == 0)
         {
-            _medicalDataService.AddPatient(_currentPatient);
+            await _medicalDataService.AddPatient(_currentPatient);
         }
         else
         {
-            _medicalDataService.UpdatePatient(_currentPatient);
+            await _medicalDataService.UpdatePatient(_currentPatient);
         }
 
         await ClosePageAsync();
@@ -95,7 +118,7 @@ public partial class PatientDetailPage : ContentPage
         bool answer = await DisplayAlert("Confirm", "Delete this patient?", "Yes", "No");
         if (answer)
         {
-            _medicalDataService.DeletePatient(_currentPatient.Id.Value);
+            await _medicalDataService.DeletePatient(_currentPatient.Id.Value);
             await ClosePageAsync();
         }
     }

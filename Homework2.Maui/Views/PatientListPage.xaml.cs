@@ -3,6 +3,7 @@ using Homework2.Maui.Services;
 using System.Collections.ObjectModel;
 using System.Linq;
 using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Homework2.Maui.Views;
 
@@ -13,7 +14,7 @@ public partial class PatientListPage : ContentPage
     private List<Patient?> _allPatientsCache = new List<Patient?>();
     private int _currentSortIndex = -1;
 
-    // NEW: Dictionary to backup patient data for Cancel functionality
+    // Dictionary to backup patient data for Cancel functionality
     private Dictionary<int, Patient> _originalPatients = new Dictionary<int, Patient>();
 
     public PatientListPage(MedicalDataService medicalDataService)
@@ -25,16 +26,34 @@ public partial class PatientListPage : ContentPage
         patientsCollectionView.ItemsSource = _patients;
     }
 
-    protected override void OnAppearing()
+    protected override async void OnAppearing()
     {
         base.OnAppearing();
-        RefreshPatientList();
+        await RefreshPatientList();
     }
 
-    private void RefreshPatientList()
+    private async Task RefreshPatientList()
     {
-        _allPatientsCache = _medicalDataService.GetPatients();
+        // Fetch from API
+        var patients = await _medicalDataService.GetPatients();
+        _allPatientsCache = new List<Patient?>(patients);
         ApplySort(); 
+    }
+
+    // Make sure to add a SearchBar in your XAML with TextChanged="OnSearchBarTextChanged"
+    private async void OnSearchBarTextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (string.IsNullOrWhiteSpace(e.NewTextValue))
+        {
+            await RefreshPatientList();
+        }
+        else
+        {
+            // Call the API search endpoint
+            var results = await _medicalDataService.SearchPatients(e.NewTextValue);
+            _allPatientsCache = new List<Patient?>(results);
+            ApplySort();
+        }
     }
 
     private async void OnSortButtonClicked(object sender, EventArgs e)
@@ -62,7 +81,7 @@ public partial class PatientListPage : ContentPage
             _currentSortIndex = -1;
             SortButton.Text = "Sort Patients";
             SortButton.BackgroundColor = Color.FromArgb("#512BD4");
-            RefreshPatientList();
+            await RefreshPatientList();
             return;
         }
 
@@ -144,26 +163,24 @@ public partial class PatientListPage : ContentPage
             bool confirm = await DisplayAlert("Confirm", $"Delete patient {patient.name}?", "Yes", "No");
             if (confirm)
             {
-                _medicalDataService.DeletePatient(patient.Id ?? 0);
-                RefreshPatientList();
+                await _medicalDataService.DeletePatient(patient.Id ?? 0);
+                await RefreshPatientList();
             }
         }
     }
 
-    // UPDATED: Inline Edit Logic with Backup
-    private void OnInlineEditClicked(object sender, EventArgs e)
+    // Inline Edit Logic
+    private async void OnInlineEditClicked(object sender, EventArgs e)
     {
         if (sender is Button button && button.BindingContext is Patient patient)
         {
             if (patient.IsEditing)
             {
-                // SAVE ACTION
-                _medicalDataService.UpdatePatient(patient);
+                // SAVE ACTION (Async Update)
+                await _medicalDataService.UpdatePatient(patient);
                 
-                // Remove from backup since we successfully saved
                 if (patient.Id.HasValue) _originalPatients.Remove(patient.Id.Value);
 
-                // Switch back to View Mode (Button appearance handled by XAML Triggers)
                 patient.IsEditing = false;
             }
             else
@@ -188,7 +205,6 @@ public partial class PatientListPage : ContentPage
         }
     }
 
-    // NEW: Cancel Logic
     private void OnInlineCancelClicked(object sender, EventArgs e)
     {
         if (sender is Button button && button.BindingContext is Patient patient)
@@ -203,11 +219,9 @@ public partial class PatientListPage : ContentPage
                 patient.race = original.race;
                 patient.gender = original.gender;
                 
-                // Cleanup
                 _originalPatients.Remove(patient.Id.Value);
             }
             
-            // Exit edit mode
             patient.IsEditing = false;
         }
     }

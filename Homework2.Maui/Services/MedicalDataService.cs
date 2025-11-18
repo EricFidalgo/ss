@@ -1,66 +1,83 @@
 using Homework2.Maui.Models;
+using Library.eCommerce.Utilities; // Namespace from your WebRequestHandler
+using Newtonsoft.Json;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace Homework2.Maui.Services
 {
     public class MedicalDataService
     {
-        private List<Patient?> _patients = new List<Patient?>();
+        private readonly WebRequestHandler _webRequestHandler;
+
+        // Patient list is now managed by the API, so we don't need a class-level _patients list for them.
+        // We keep these lists for entities not yet on the API:
         private List<Physician?> _physicians = new List<Physician?>();
         private List<Appointment?> _appointments = new List<Appointment?>();
-        private int _nextPatientId = 1;
+        
         private int _nextPhysicianId = 1;
         private int _nextAppointmentId = 1;
 
-        // --- Patient CRUD ---
-
-        public List<Patient?> GetPatients() => _patients;
-
-        public Patient? GetPatient(int id) => _patients.FirstOrDefault(p => p?.Id == id);
-
-        public Patient AddPatient(Patient patient)
+        public MedicalDataService()
         {
-            patient.Id = _nextPatientId++;
-            _patients.Add(patient);
-            return patient;
+            _webRequestHandler = new WebRequestHandler();
         }
 
-        public void UpdatePatient(Patient updatedPatient)
+        // --- Patient CRUD (API Integration) ---
+
+        public async Task<List<Patient>> GetPatients()
         {
-            var patient = GetPatient(updatedPatient.Id ?? -1);
-            if (patient != null)
+            var response = await _webRequestHandler.Get("/Patient");
+            if (response != null)
             {
-                patient.name = updatedPatient.name;
-                patient.address = updatedPatient.address;
-                patient.birthdate = updatedPatient.birthdate;
-                patient.race = updatedPatient.race;
-                patient.gender = updatedPatient.gender;
-                patient.medical_notes = updatedPatient.medical_notes;
-                patient.diagnoses = updatedPatient.diagnoses;
-                patient.prescriptions = updatedPatient.prescriptions;
+                return JsonConvert.DeserializeObject<List<Patient>>(response) ?? new List<Patient>();
             }
+            return new List<Patient>();
         }
 
-        public void DeletePatient(int patientId)
+        public async Task<Patient?> GetPatient(int id)
         {
-            var patient = GetPatient(patientId);
-            if (patient != null)
+            var response = await _webRequestHandler.Get($"/Patient/{id}");
+            if (response != null)
             {
-                var appointmentsToDelete = _appointments
-                    .Where(a => a?.patients?.Id == patientId)
-                    .ToList();
-                
-                foreach (var appointment in appointmentsToDelete)
-                {
-                    if (appointment != null) DeleteAppointment(appointment.Id);
-                }
-                
-                _patients.Remove(patient);
+                return JsonConvert.DeserializeObject<Patient>(response);
             }
+            return null;
         }
 
-        // --- Physician CRUD ---
+        public async Task<Patient> AddPatient(Patient patient)
+        {
+            var response = await _webRequestHandler.Post("/Patient", patient);
+            if (response != null && response != "ERROR")
+            {
+                return JsonConvert.DeserializeObject<Patient>(response);
+            }
+            return null;
+        }
+
+        public async Task UpdatePatient(Patient updatedPatient)
+        {
+            // NOTE: Ensure your WebRequestHandler has a 'Put' method similar to 'Post'
+            await _webRequestHandler.Put("/Patient", updatedPatient);
+        }
+
+        public async Task DeletePatient(int patientId)
+        {
+            await _webRequestHandler.Delete($"/Patient/{patientId}");
+        }
+
+        public async Task<List<Patient>> SearchPatients(string query)
+        {
+            var response = await _webRequestHandler.Get($"/Patient/Search/{query}");
+            if (response != null)
+            {
+                return JsonConvert.DeserializeObject<List<Patient>>(response) ?? new List<Patient>();
+            }
+            return new List<Patient>();
+        }
+
+        // --- Physician CRUD (In-Memory) ---
         
         public List<Physician?> GetPhysicians() => _physicians;
         
@@ -103,7 +120,7 @@ namespace Homework2.Maui.Services
             }
         }
 
-        // --- Appointment CRUD ---
+        // --- Appointment CRUD (In-Memory) ---
         
         public List<Appointment?> GetAppointments() => _appointments;
         
@@ -111,14 +128,21 @@ namespace Homework2.Maui.Services
 
         private void RefreshAllAvailability()
         {
-            foreach (var p in _patients) p?.unavailable_hours.Clear();
+            // Note: This logic assumes patients are in memory, which they aren't anymore.
+            // For a full real-world app, availability checking would move to the backend.
+            // For this exercise, we will skip clearing patient hours to avoid errors, 
+            // or you would need to fetch the patient first.
+            
             foreach (var p in _physicians) p?.unavailable_hours.Clear();
 
             foreach (var appt in _appointments)
             {
                 if (appt != null)
                 {
-                    appt.patients?.unavailable_hours.Add(appt.hour);
+                    // We can't easily update the patient object's unavailable_hours since 
+                    // the patient object is no longer held in a persistent list here.
+                    // appt.patients?.unavailable_hours.Add(appt.hour); 
+                    
                     appt.physicians?.unavailable_hours.Add(appt.hour);
                 }
             }
@@ -187,19 +211,16 @@ namespace Homework2.Maui.Services
                 a.hour == time);
         }
 
-        // --- NEW ROOM AVAILABILITY CHECK ---
         public bool IsRoomAvailable(string room, DateTime time, int? excludeAppointmentId = null)
         {
-            if (string.IsNullOrWhiteSpace(room)) return true; // No room assigned yet is valid, or handled by UI validation
+            if (string.IsNullOrWhiteSpace(room)) return true;
 
             return !_appointments.Any(a => 
                 a.Id != excludeAppointmentId && 
                 string.Equals(a.Room, room, System.StringComparison.OrdinalIgnoreCase) && 
                 a.hour == time);
         }
-        // -----------------------------------
 
-        // Updated to accept 'room'
         public Appointment CreateAppointment(Patient patient, Physician physician, DateTime time, string room)
         {
             var normalizedTime = new DateTime(time.Year, time.Month, time.Day, time.Hour, 0, 0);
@@ -210,7 +231,7 @@ namespace Homework2.Maui.Services
                 patients = patient,
                 physicians = physician,
                 hour = normalizedTime,
-                Room = room // Set the room
+                Room = room 
             };
 
             _appointments.Add(newAppointment);
@@ -234,7 +255,7 @@ namespace Homework2.Maui.Services
                 appointment.patients = updatedAppointment.patients;
                 appointment.physicians = updatedAppointment.physicians;
                 appointment.hour = normalizedTime;
-                appointment.Room = updatedAppointment.Room; // Update the room
+                appointment.Room = updatedAppointment.Room; 
                 appointment.Treatments = updatedAppointment.Treatments;
                 
                 RefreshAllAvailability(); 
