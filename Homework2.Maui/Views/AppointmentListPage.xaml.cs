@@ -241,4 +241,40 @@ public partial class AppointmentListPage : ContentPage
             }
         }
     }
+    private void OnInlineAddDiagnosisClicked(object sender, EventArgs e)
+    {
+        if (sender is Button addButton && addButton.CommandParameter is Appointment appointment)
+        {
+            // Traverse up from the button to find the specific Entry within this Appointment's row
+            Grid? addGrid = addButton.Parent as Grid;
+            Entry? newDiagnosisEntry = addGrid?.Children.OfType<Entry>().FirstOrDefault();
+
+            if (newDiagnosisEntry != null)
+            {
+                string newDiag = newDiagnosisEntry.Text;
+
+                if (!string.IsNullOrWhiteSpace(newDiag) && appointment.patients != null)
+                {
+                    appointment.patients.diagnoses.Add(newDiag); // ObservableCollection handles UI update
+                    newDiagnosisEntry.Text = string.Empty; // Clear input
+
+                    // No need to reassign list for ObservableCollection; just update Patient to save
+                    _medicalDataService.UpdatePatient(appointment.patients);
+                }
+            }
+        }
+    }
+
+    private void OnInlineDeleteDiagnosisClicked(object sender, EventArgs e)
+    {
+        if (sender is Button deleteButton && deleteButton.CommandParameter is Appointment appointment)
+        {
+            if (deleteButton.BindingContext is string diagnosisToRemove && appointment.patients != null)
+            {
+                appointment.patients.diagnoses.Remove(diagnosisToRemove); // ObservableCollection handles UI update
+                // No need to reassign list for ObservableCollection; just update Patient to save
+                _medicalDataService.UpdatePatient(appointment.patients);
+            }
+        }
+    }
 }

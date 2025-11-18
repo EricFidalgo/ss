@@ -138,6 +138,68 @@
                 </VerticalStackLayout>
             </Frame>
 
+            <Frame x:Name="DiagnosesFrame"
+                   Padding="15" 
+                   BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+                   BorderColor="{StaticResource Gray200}"
+                   CornerRadius="12"
+                   IsVisible="False"> <VerticalStackLayout Spacing="12">
+                    <Label Text="📝 Diagnosis Management" 
+                           FontSize="13"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource Primary}"/>
+                    
+                    <Grid ColumnDefinitions="*, Auto" ColumnSpacing="10">
+                        <Entry x:Name="NewDiagnosisEntry" 
+                               Placeholder="Enter new diagnosis"
+                               FontSize="14"
+                               VerticalOptions="Center"/>
+                        <Button Text="Add"
+                                Clicked="OnAddDiagnosisClicked"
+                                Grid.Column="1"
+                                FontSize="12"
+                                HeightRequest="40"
+                                BackgroundColor="{StaticResource Primary}"
+                                TextColor="White"/>
+                    </Grid>
+
+                    <Label Text="Patient History:" FontSize="11" TextColor="{StaticResource Gray500}"/>
+                    
+                    <CollectionView x:Name="DiagnosesCollectionView"
+                                    HeightRequest="200"
+                                    EmptyView="No diagnoses recorded.">
+                        <CollectionView.ItemTemplate>
+                            <DataTemplate>
+                                <Frame Padding="10" 
+                                       Margin="0,0,0,15" 
+                                       BackgroundColor="{StaticResource Secondary}"
+                                       BorderColor="Transparent"
+                                       CornerRadius="8"
+                                       HasShadow="False">
+                                    
+                                    <Grid ColumnDefinitions="*, Auto" VerticalOptions="Center">
+                                        <Label Grid.Column="0" 
+                                               Text="{Binding .}" 
+                                               FontSize="14"
+                                               TextColor="{StaticResource Primary}"/>
+                                        
+                                        <Button Grid.Column="1"
+                                                Text="✕"
+                                                Clicked="OnDeleteDiagnosisClicked"
+                                                BackgroundColor="Transparent"
+                                                TextColor="#DC3545"
+                                                FontSize="16"
+                                                Padding="0"
+                                                HeightRequest="30"
+                                                WidthRequest="30"/>
+                                    </Grid>
+                                </Frame>
+                            </DataTemplate>
+                        </CollectionView.ItemTemplate>
+                    </CollectionView>
+                </VerticalStackLayout>
+            </Frame>
+                
             <VerticalStackLayout Spacing="12" Margin="0,10,0,20">
                 <Button Text="💾 Save Appointment" 
                         Clicked="OnSaveClicked"

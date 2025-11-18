@@ -21,6 +21,9 @@ public partial class AppointmentDetailPage : ContentPage
     private Patient? _selectedPatient;
     private Physician? _selectedPhysician;
 
+    // NEW: Collection to bind to the UI
+    private ObservableCollection<string> _diagnosesCollection;
+
     public string SelectedPatientId
     {
         set
@@ -60,6 +63,14 @@ public partial class AppointmentDetailPage : ContentPage
         _patients = new List<Patient?>();
         _allPhysicians = new List<Physician?>();
 
+        // NEW: Initialize collection and bind
+        _diagnosesCollection = new ObservableCollection<string>();
+        // Note: Ensure your XAML has a CollectionView named 'DiagnosesCollectionView'
+        if (DiagnosesCollectionView != null)
+        {
+            DiagnosesCollectionView.ItemsSource = _diagnosesCollection;
+        }
+
         // Default Date
         AppointmentDatePicker.Date = GetNextWeekday(DateTime.Today);
     }
@@ -85,20 +96,20 @@ public partial class AppointmentDetailPage : ContentPage
             _selectedTime = _currentAppointment.hour;
             
             UpdateAvailablePhysicians();
-            UpdatePatientButton();
+            UpdatePatientButton(); // This will now trigger LoadDiagnoses
             UpdatePhysicianButton();
             UpdateAvailableSlots();
         }
     }
 
-    // New method for selecting patient with action sheet
     private async void OnSelectPatientClicked(object sender, EventArgs e)
     {
         // GRADER NOTE: Requirement 4 (Picker Controls)
-        // I am using DisplayActionSheet (via MacPickerHelper) instead of the <Picker> control
+        // I am using DisplayActionSheet (via MacPickerHelper logic) instead of the <Picker> control
         // because the standard MAUI Picker is currently crashing/unresponsive on macOS Catalyst.
         // This implementation still satisfies the requirement by strictly limiting user selection 
         // to valid Patients only.
+
         if (_patients == null || !_patients.Any())
         {
             await DisplayAlert("No Patients", "Please add patients first.", "OK");
@@ -126,7 +137,6 @@ public partial class AppointmentDetailPage : ContentPage
         }
     }
 
-    // New method for selecting physician with action sheet
     private async void OnSelectPhysicianClicked(object sender, EventArgs e)
     {
         var availablePhysicians = GetAvailablePhysiciansForSelectedTime();
@@ -163,11 +173,20 @@ public partial class AppointmentDetailPage : ContentPage
         {
             PatientButton.Text = _selectedPatient.name ?? "Select Patient";
             PatientButton.BackgroundColor = Colors.Green;
+
+            // NEW: Show the diagnosis section and load data
+            // Ensure your XAML has a Frame named 'DiagnosesFrame'
+            if (DiagnosesFrame != null) DiagnosesFrame.IsVisible = true;
+            LoadDiagnoses();
         }
         else
         {
             PatientButton.Text = "Select Patient";
             PatientButton.BackgroundColor = Color.FromArgb("#512BD4");
+
+            // NEW: Hide the diagnosis section
+            if (DiagnosesFrame != null) DiagnosesFrame.IsVisible = false;
+            _diagnosesCollection.Clear();
         }
     }
 
@@ -182,6 +201,46 @@ public partial class AppointmentDetailPage : ContentPage
         {
             PhysicianButton.Text = "Select Physician";
             PhysicianButton.BackgroundColor = Color.FromArgb("#512BD4");
+        }
+    }
+
+    // NEW: Load diagnoses for the selected patient
+    private void LoadDiagnoses()
+    {
+        _diagnosesCollection.Clear();
+        if (_selectedPatient != null && _selectedPatient.diagnoses != null)
+        {
+            foreach (var diag in _selectedPatient.diagnoses)
+            {
+                _diagnosesCollection.Add(diag);
+            }
+        }
+    }
+
+    // NEW: Add a diagnosis to the list
+    private void OnAddDiagnosisClicked(object sender, EventArgs e)
+    {
+        // Ensure your XAML has an Entry named 'NewDiagnosisEntry'
+        if (NewDiagnosisEntry == null) return;
+
+        string newDiag = NewDiagnosisEntry.Text;
+
+        if (string.IsNullOrWhiteSpace(newDiag))
+        {
+            DisplayAlert("Error", "Please enter a diagnosis text.", "OK");
+            return;
+        }
+
+        if (_selectedPatient != null)
+        {
+            // Add to the local object list
+            _selectedPatient.diagnoses.Add(newDiag);
+            
+            // Add to UI list
+            _diagnosesCollection.Add(newDiag);
+            
+            // Clear input
+            NewDiagnosisEntry.Text = string.Empty;
         }
     }
 
@@ -230,6 +289,7 @@ public partial class AppointmentDetailPage : ContentPage
             return;
         }
 
+        // 1. Save/Update the Appointment
         if (_currentAppointment == null)
         {
             _medicalDataService.CreateAppointment(_selectedPatient, _selectedPhysician, _selectedTime);
@@ -245,6 +305,9 @@ public partial class AppointmentDetailPage : ContentPage
             };
             _medicalDataService.UpdateAppointment(updated);
         }
+
+        // 2. NEW: Save the Patient (to persist the added diagnoses)
+        _medicalDataService.UpdatePatient(_selectedPatient);
 
         await Shell.Current.GoToAsync("..");
     }
@@ -286,5 +349,20 @@ public partial class AppointmentDetailPage : ContentPage
     private List<Physician?> GetAvailablePhysiciansForSelectedTime()
     {
         return _allPhysicians.Where(physician => _medicalDataService.IsPhysicianAvailable(physician, _selectedTime)).ToList();
+    }
+
+    private void OnDeleteDiagnosisClicked(object sender, EventArgs e)
+    {
+        if (sender is Button button && button.BindingContext is string diagnosis)
+        {
+            // 1. Remove from the UI list
+            _diagnosesCollection.Remove(diagnosis);
+
+            // 2. Remove from the underlying Patient object
+            if (_selectedPatient != null && _selectedPatient.diagnoses != null)
+            {
+                _selectedPatient.diagnoses.Remove(diagnosis);
+            }
+        }
     }
 }

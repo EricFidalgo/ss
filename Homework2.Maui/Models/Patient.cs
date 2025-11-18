@@ -1,3 +1,4 @@
+using System.Collections.ObjectModel; // Required for ObservableCollection
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
 
@@ -43,7 +44,23 @@ namespace Homework2.Maui.Models
         }
 
         public List<string> medical_notes { get; set; } = new List<string>();
-        public List<string> diagnoses { get; set; } = new List<string>();
+
+        // --- UPDATED: diagnoses is now an ObservableCollection ---
+        // This allows the UI to react immediately when items are added or removed.
+        private ObservableCollection<string> _diagnoses = new ObservableCollection<string>();
+        public ObservableCollection<string> diagnoses
+        {
+            get => _diagnoses;
+            set
+            {
+                if (_diagnoses != value)
+                {
+                    _diagnoses = value;
+                    OnPropertyChanged();
+                }
+            }
+        }
+
         public List<string> prescriptions { get; set; } = new List<string>();
         public List<DateTime> unavailable_hours { get; set; } = new List<DateTime>();
 
