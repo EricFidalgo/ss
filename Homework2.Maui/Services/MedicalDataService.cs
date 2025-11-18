@@ -109,7 +109,6 @@ namespace Homework2.Maui.Services
         
         public Appointment? GetAppointment(int id) => _appointments.FirstOrDefault(a => a?.Id == id);
 
-        // Helper to refresh the cache (kept for compatibility, though we use robust checks now)
         private void RefreshAllAvailability()
         {
             foreach (var p in _patients) p?.unavailable_hours.Clear();
@@ -125,7 +124,6 @@ namespace Homework2.Maui.Services
             }
         }
 
-        // ROBUST: Check availability by scanning the actual appointment list for conflicts
         public List<DateTime> GetAvailableSlots(DateTime date, Patient patient, int? excludeAppointmentId = null)
         {
             var availableSlots = new List<DateTime>();
@@ -136,18 +134,15 @@ namespace Homework2.Maui.Services
             {
                 var timeSlot = new DateTime(date.Year, date.Month, date.Day, hour, 0, 0);
                 
-                // 1. Check if Patient is busy in ANY OTHER appointment
                 bool patientBusy = _appointments.Any(a => 
-                    a.Id != excludeAppointmentId && // Ignore the appointment we are currently editing
-                    a.patients?.Id == patient.Id && // Check for THIS patient
-                    a.hour == timeSlot              // Check for THIS time
+                    a.Id != excludeAppointmentId && 
+                    a.patients?.Id == patient.Id && 
+                    a.hour == timeSlot              
                 );
 
-                // 2. Check if ANY Physician is free
                 bool anyPhysicianFree = _physicians.Any(ph => {
                     if (ph == null) return false;
                     
-                    // Check if THIS physician is busy in ANY OTHER appointment
                     bool physicianBusy = _appointments.Any(a =>
                         a.Id != excludeAppointmentId &&
                         a.physicians?.Id == ph.Id &&
@@ -157,7 +152,6 @@ namespace Homework2.Maui.Services
                     return !physicianBusy;
                 });
                 
-                // Only valid if Patient is free AND at least one Physician is free
                 if (!patientBusy && anyPhysicianFree)
                 {
                     availableSlots.Add(timeSlot);
@@ -173,9 +167,8 @@ namespace Homework2.Maui.Services
             {
                 if (ph == null) return false;
                 
-                // Check if this physician is busy in ANY OTHER appointment
                 bool isBusy = _appointments.Any(a => 
-                    a.Id != excludeAppointmentId && // Ignore the appointment we are currently editing
+                    a.Id != excludeAppointmentId && 
                     a.physicians?.Id == ph.Id &&
                     a.hour == timeSlot
                 );
@@ -188,14 +181,26 @@ namespace Homework2.Maui.Services
         {
             if (physician == null || time == default) return false;
 
-            // Check availability excluding the current appointment ID
             return !_appointments.Any(a => 
-                a.Id != excludeAppointmentId && // Add this check
+                a.Id != excludeAppointmentId && 
                 a.physicians?.Id == physician.Id && 
                 a.hour == time);
         }
 
-        public Appointment CreateAppointment(Patient patient, Physician physician, DateTime time)
+        // --- NEW ROOM AVAILABILITY CHECK ---
+        public bool IsRoomAvailable(string room, DateTime time, int? excludeAppointmentId = null)
+        {
+            if (string.IsNullOrWhiteSpace(room)) return true; // No room assigned yet is valid, or handled by UI validation
+
+            return !_appointments.Any(a => 
+                a.Id != excludeAppointmentId && 
+                string.Equals(a.Room, room, System.StringComparison.OrdinalIgnoreCase) && 
+                a.hour == time);
+        }
+        // -----------------------------------
+
+        // Updated to accept 'room'
+        public Appointment CreateAppointment(Patient patient, Physician physician, DateTime time, string room)
         {
             var normalizedTime = new DateTime(time.Year, time.Month, time.Day, time.Hour, 0, 0);
             
@@ -204,11 +209,12 @@ namespace Homework2.Maui.Services
                 Id = _nextAppointmentId++,
                 patients = patient,
                 physicians = physician,
-                hour = normalizedTime
+                hour = normalizedTime,
+                Room = room // Set the room
             };
 
             _appointments.Add(newAppointment);
-            RefreshAllAvailability(); // Update caches
+            RefreshAllAvailability(); 
 
             return newAppointment;
         }
@@ -228,11 +234,10 @@ namespace Homework2.Maui.Services
                 appointment.patients = updatedAppointment.patients;
                 appointment.physicians = updatedAppointment.physicians;
                 appointment.hour = normalizedTime;
-                
-                // --- Update Treatments ---
+                appointment.Room = updatedAppointment.Room; // Update the room
                 appointment.Treatments = updatedAppointment.Treatments;
                 
-                RefreshAllAvailability(); // Update caches
+                RefreshAllAvailability(); 
             }
         }
 
@@ -242,7 +247,7 @@ namespace Homework2.Maui.Services
             if (appointment != null)
             {
                 _appointments.Remove(appointment);
-                RefreshAllAvailability(); // Update caches
+                RefreshAllAvailability(); 
             }
         }
     }

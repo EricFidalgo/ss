@@ -98,6 +98,9 @@ public partial class AppointmentDetailPage : ContentPage
             AppointmentDatePicker.Date = _currentAppointment.hour.Date;
             _selectedTime = _currentAppointment.hour;
             
+            // Load Room
+            RoomEntry.Text = _currentAppointment.Room;
+            
             UpdateAvailablePhysicians();
             UpdatePatientButton(); 
             UpdatePhysicianButton();
@@ -361,11 +364,24 @@ public partial class AppointmentDetailPage : ContentPage
             return;
         }
 
+        // --- Get Room and Validate ---
+        string room = RoomEntry.Text;
+        if (!string.IsNullOrWhiteSpace(room))
+        {
+            if (!_medicalDataService.IsRoomAvailable(room, _selectedTime, _currentAppointment?.Id))
+            {
+                await DisplayAlert("Room Conflict", $"Room '{room}' is already booked at {_selectedTime:h:mm tt}.", "OK");
+                return;
+            }
+        }
+        // -----------------------------
+
         var treatmentsToSave = _treatmentsCollection.ToList();
 
         if (_currentAppointment == null)
         {
-            var newAppt = _medicalDataService.CreateAppointment(_selectedPatient, _selectedPhysician, _selectedTime);
+            // Pass room to create
+            var newAppt = _medicalDataService.CreateAppointment(_selectedPatient, _selectedPhysician, _selectedTime, room);
             newAppt.Treatments = treatmentsToSave;
         }
         else
@@ -376,6 +392,7 @@ public partial class AppointmentDetailPage : ContentPage
                 patients = _selectedPatient,
                 physicians = _selectedPhysician,
                 hour = _selectedTime,
+                Room = room, // Update room
                 Treatments = treatmentsToSave
             };
             _medicalDataService.UpdateAppointment(updated);

@@ -130,6 +130,20 @@
                 </VerticalStackLayout>
             </Frame>
 
+            <Frame Padding="15" 
+                   BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"
+                   BorderColor="{StaticResource Gray200}"
+                   CornerRadius="12">
+                <VerticalStackLayout Spacing="12">
+                    <Label Text="🏥 Room Selection" 
+                           FontSize="13"
+                           FontAttributes="Bold"
+                           TextColor="{StaticResource Primary}"/>
+                    <Entry x:Name="RoomEntry" 
+                           Placeholder="Enter Room Number (e.g. 101)"
+                           FontSize="14"/>
+                </VerticalStackLayout>
+            </Frame>
             <Frame x:Name="DiagnosesFrame"
                    Padding="15" 
                    BackgroundColor="{AppThemeBinding Light={StaticResource White}, Dark={StaticResource Gray900}}"

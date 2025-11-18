@@ -28,9 +28,16 @@ namespace Homework2.Maui.Models
             set { _hour = value; OnPropertyChanged(); }
         }
 
-        // --- THIS IS THE MISSING PROPERTY ---
+        // --- NEW ROOM PROPERTY ---
+        private string _room;
+        public string Room
+        {
+            get => _room;
+            set { _room = value; OnPropertyChanged(); }
+        }
+        // -------------------------
+
         public List<Treatment> Treatments { get; set; } = new List<Treatment>();
-        // ------------------------------------
 
         // --- properties for Inline Editing ---
 
