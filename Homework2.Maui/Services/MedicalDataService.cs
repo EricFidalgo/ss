@@ -184,8 +184,6 @@ namespace Homework2.Maui.Services
             }).ToList();
         }
 
-        // In Homework2.Maui/Services/MedicalDataService.cs
-
         public bool IsPhysicianAvailable(Physician? physician, DateTime time, int? excludeAppointmentId = null)
         {
             if (physician == null || time == default) return false;
@@ -230,6 +228,9 @@ namespace Homework2.Maui.Services
                 appointment.patients = updatedAppointment.patients;
                 appointment.physicians = updatedAppointment.physicians;
                 appointment.hour = normalizedTime;
+                
+                // --- Update Treatments ---
+                appointment.Treatments = updatedAppointment.Treatments;
                 
                 RefreshAllAvailability(); // Update caches
             }

@@ -13,16 +13,14 @@ public partial class AppointmentDetailPage : ContentPage
     private Appointment? _currentAppointment;
     private DateTime _selectedTime;
 
-    // Data sources
     private List<Patient?> _patients;
     private List<Physician?> _allPhysicians;
     
-    // Selected items
     private Patient? _selectedPatient;
     private Physician? _selectedPhysician;
 
-    // Diagnoses Collection
     private ObservableCollection<string> _diagnosesCollection;
+    private ObservableCollection<Treatment> _treatmentsCollection;
 
     public string SelectedPatientId
     {
@@ -63,11 +61,19 @@ public partial class AppointmentDetailPage : ContentPage
         _patients = new List<Patient?>();
         _allPhysicians = new List<Physician?>();
 
-        // Initialize collection and bind
+        // Initialize Diagnoses
         _diagnosesCollection = new ObservableCollection<string>();
         if (DiagnosesCollectionView != null)
         {
             DiagnosesCollectionView.ItemsSource = _diagnosesCollection;
+        }
+
+        // Initialize Treatments
+        _treatmentsCollection = new ObservableCollection<Treatment>();
+        if (TreatmentsCollectionView != null)
+        {
+            // Bind specifically to the CollectionView
+            TreatmentsCollectionView.ItemsSource = _treatmentsCollection;
         }
 
         // Default Date
@@ -82,11 +88,9 @@ public partial class AppointmentDetailPage : ContentPage
 
     private void LoadData()
     {
-        // Load Lists
         _patients = _medicalDataService.GetPatients();
         _allPhysicians = _medicalDataService.GetPhysicians();
 
-        // If Editing, Pre-select values
         if (_currentAppointment != null)
         {
             _selectedPatient = _patients.FirstOrDefault(p => p?.Id == _currentAppointment.patients?.Id);
@@ -98,7 +102,49 @@ public partial class AppointmentDetailPage : ContentPage
             UpdatePatientButton(); 
             UpdatePhysicianButton();
             UpdateAvailableSlots();
+
+            // Load Treatments
+            _treatmentsCollection.Clear();
+            if (_currentAppointment.Treatments != null)
+            {
+                foreach (var t in _currentAppointment.Treatments)
+                {
+                    _treatmentsCollection.Add(t);
+                }
+            }
+            UpdateTotalCost();
         }
+    }
+
+    private void OnAddTreatmentClicked(object sender, EventArgs e)
+    {
+        string name = TreatmentNameEntry.Text;
+        if (decimal.TryParse(TreatmentCostEntry.Text, out decimal cost) && !string.IsNullOrWhiteSpace(name))
+        {
+            _treatmentsCollection.Add(new Treatment { Name = name, Cost = cost });
+            TreatmentNameEntry.Text = string.Empty;
+            TreatmentCostEntry.Text = string.Empty;
+            UpdateTotalCost();
+        }
+        else
+        {
+            DisplayAlert("Invalid Input", "Please enter a valid name and numeric cost.", "OK");
+        }
+    }
+
+    private void OnDeleteTreatmentClicked(object sender, EventArgs e)
+    {
+        if (sender is Button btn && btn.BindingContext is Treatment treatment)
+        {
+            _treatmentsCollection.Remove(treatment);
+            UpdateTotalCost();
+        }
+    }
+
+    private void UpdateTotalCost()
+    {
+        decimal total = _treatmentsCollection.Sum(t => t.Cost);
+        TotalCostLabel.Text = $"${total:F2}";
     }
 
     private async void OnSelectPatientClicked(object sender, EventArgs e)
@@ -246,7 +292,6 @@ public partial class AppointmentDetailPage : ContentPage
             return;
         }
 
-        // Reset the selected time when date changes to force user to pick a new slot
         _selectedTime = default; 
         SelectedTimeLabel.Text = "No time selected";
 
@@ -267,14 +312,11 @@ public partial class AppointmentDetailPage : ContentPage
 
         var availableSlots = _medicalDataService.GetAvailableSlots(selectedDate, _selectedPatient, excludeId);
         
-        // Use BindableLayout instead of CollectionView ItemsSource
         BindableLayout.SetItemsSource(TimeSlotsLayout, availableSlots);
         
-        // Force color refresh if a time was already selected
         Dispatcher.Dispatch(() => RefreshTimeSlotColors());
     }
 
-    // FIXED: Single Tap Logic using Buttons
     private void OnTimeSlotClicked(object sender, EventArgs e)
     {
         if (sender is Button clickedButton && clickedButton.BindingContext is DateTime selectedTime)
@@ -286,7 +328,6 @@ public partial class AppointmentDetailPage : ContentPage
         }
     }
 
-    // HELPER: Manually update colors because we are using simple Buttons
     private void RefreshTimeSlotColors()
     {
         foreach (var child in TimeSlotsLayout.Children)
@@ -299,14 +340,13 @@ public partial class AppointmentDetailPage : ContentPage
                 }
                 else
                 {
-                    // Use the Primary resource color
                     if (Application.Current.Resources.TryGetValue("Primary", out var color))
                     {
                          btn.BackgroundColor = (Color)color;
                     }
                     else
                     {
-                        btn.BackgroundColor = Color.FromArgb("#512BD4"); // Fallback
+                        btn.BackgroundColor = Color.FromArgb("#512BD4");
                     }
                 }
             }
@@ -321,9 +361,12 @@ public partial class AppointmentDetailPage : ContentPage
             return;
         }
 
+        var treatmentsToSave = _treatmentsCollection.ToList();
+
         if (_currentAppointment == null)
         {
-            _medicalDataService.CreateAppointment(_selectedPatient, _selectedPhysician, _selectedTime);
+            var newAppt = _medicalDataService.CreateAppointment(_selectedPatient, _selectedPhysician, _selectedTime);
+            newAppt.Treatments = treatmentsToSave;
         }
         else
         {
@@ -332,7 +375,8 @@ public partial class AppointmentDetailPage : ContentPage
                 Id = _currentAppointment.Id,
                 patients = _selectedPatient,
                 physicians = _selectedPhysician,
-                hour = _selectedTime
+                hour = _selectedTime,
+                Treatments = treatmentsToSave
             };
             _medicalDataService.UpdateAppointment(updated);
         }
@@ -376,7 +420,6 @@ public partial class AppointmentDetailPage : ContentPage
 
     private List<Physician?> GetAvailablePhysiciansForSelectedTime()
     {
-        // Pass _currentAppointment?.Id to exclude the current appointment from the check
         return _allPhysicians.Where(physician => 
             _medicalDataService.IsPhysicianAvailable(physician, _selectedTime, _currentAppointment?.Id))
             .ToList();

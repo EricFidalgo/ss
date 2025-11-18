@@ -28,6 +28,10 @@ namespace Homework2.Maui.Models
             set { _hour = value; OnPropertyChanged(); }
         }
 
+        // --- THIS IS THE MISSING PROPERTY ---
+        public List<Treatment> Treatments { get; set; } = new List<Treatment>();
+        // ------------------------------------
+
         // --- properties for Inline Editing ---
 
         private bool _isEditing;
@@ -38,13 +42,12 @@ namespace Homework2.Maui.Models
             {
                 _isEditing = value;
                 OnPropertyChanged();
-                OnPropertyChanged(nameof(IsNotEditing)); // Update the opposite flag too
+                OnPropertyChanged(nameof(IsNotEditing)); 
             }
         }
 
         public bool IsNotEditing => !IsEditing;
 
-        // Standard INotifyPropertyChanged implementation
         public event PropertyChangedEventHandler? PropertyChanged;
         protected void OnPropertyChanged([CallerMemberName] string name = null)
         {
