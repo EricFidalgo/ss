@@ -245,6 +245,11 @@ public partial class AppointmentDetailPage : ContentPage
             AppointmentDatePicker.Date = GetNextWeekday(e.NewDate);
             return;
         }
+
+        // Reset the selected time when date changes to force user to pick a new slot
+        _selectedTime = default; 
+        SelectedTimeLabel.Text = "No time selected";
+
         UpdateAvailablePhysicians();
     }
 
@@ -371,6 +376,9 @@ public partial class AppointmentDetailPage : ContentPage
 
     private List<Physician?> GetAvailablePhysiciansForSelectedTime()
     {
-        return _allPhysicians.Where(physician => _medicalDataService.IsPhysicianAvailable(physician, _selectedTime)).ToList();
+        // Pass _currentAppointment?.Id to exclude the current appointment from the check
+        return _allPhysicians.Where(physician => 
+            _medicalDataService.IsPhysicianAvailable(physician, _selectedTime, _currentAppointment?.Id))
+            .ToList();
     }
 }

@@ -184,12 +184,17 @@ namespace Homework2.Maui.Services
             }).ToList();
         }
 
-        public bool IsPhysicianAvailable(Physician? physician, DateTime time)
+        // In Homework2.Maui/Services/MedicalDataService.cs
+
+        public bool IsPhysicianAvailable(Physician? physician, DateTime time, int? excludeAppointmentId = null)
         {
             if (physician == null || time == default) return false;
 
-            // Robust check
-            return !_appointments.Any(a => a.physicians?.Id == physician.Id && a.hour == time);
+            // Check availability excluding the current appointment ID
+            return !_appointments.Any(a => 
+                a.Id != excludeAppointmentId && // Add this check
+                a.physicians?.Id == physician.Id && 
+                a.hour == time);
         }
 
         public Appointment CreateAppointment(Patient patient, Physician physician, DateTime time)

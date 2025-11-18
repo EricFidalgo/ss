@@ -159,35 +159,41 @@
                     <Label Text="Patient History:" FontSize="11" TextColor="{StaticResource Gray500}"/>
                     
                     <CollectionView x:Name="DiagnosesCollectionView"
-                                    HeightRequest="200"
-                                    EmptyView="No diagnoses recorded.">
-                        <CollectionView.ItemTemplate>
-                            <DataTemplate>
-                                <Frame Padding="8" 
-                                       Margin="0,0,0,10" 
-                                       BackgroundColor="{StaticResource Secondary}"
-                                       BorderColor="Transparent"
-                                       CornerRadius="8"
-                                       HasShadow="False">
-                                    <Grid ColumnDefinitions="*, Auto" VerticalOptions="Center">
-                                        <Label Grid.Column="0" 
-                                               Text="{Binding .}" 
-                                               FontSize="13"
-                                               TextColor="{StaticResource Primary}"/>
-                                        <Button Grid.Column="1"
-                                                Text="✕"
-                                                Clicked="OnDeleteDiagnosisClicked"
-                                                BackgroundColor="Transparent"
-                                                TextColor="#DC3545"
-                                                FontSize="16"
-                                                Padding="0"
-                                                HeightRequest="30"
-                                                WidthRequest="30"/>
-                                    </Grid>
-                                </Frame>
-                            </DataTemplate>
-                        </CollectionView.ItemTemplate>
-                    </CollectionView>
+                    HeightRequest="200"
+                    EmptyView="No diagnoses recorded.">
+        
+        <CollectionView.ItemsLayout>
+            <LinearItemsLayout Orientation="Vertical" ItemSpacing="8" />
+        </CollectionView.ItemsLayout>
+
+        <CollectionView.ItemTemplate>
+            <DataTemplate>
+                <Frame Padding="12,4" 
+                    BackgroundColor="{StaticResource Secondary}"
+                    BorderColor="Transparent"
+                    CornerRadius="8"
+                    HasShadow="False">
+                    <Grid ColumnDefinitions="*, Auto" VerticalOptions="Center">
+                        <Label Grid.Column="0" 
+                            Text="{Binding .}" 
+                            FontSize="13"
+                            VerticalOptions="Center"
+                            TextColor="{StaticResource Primary}"/>
+                        <Button Grid.Column="1"
+                                Text="✕"
+                                Clicked="OnDeleteDiagnosisClicked"
+                                BackgroundColor="Transparent"
+                                TextColor="#DC3545"
+                                FontSize="16"
+                                Padding="0"
+                                HeightRequest="30"
+                                WidthRequest="30"
+                                VerticalOptions="Center"/>
+                    </Grid>
+                </Frame>
+            </DataTemplate>
+        </CollectionView.ItemTemplate>
+    </CollectionView>
                 </VerticalStackLayout>
             </Frame>
 
